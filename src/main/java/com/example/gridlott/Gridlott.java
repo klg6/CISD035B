@@ -25,8 +25,8 @@ public class Gridlott extends Application {
     public void start(Stage stage) {
 
         //Dimensions for parking lot (you can change rows/cols values)
-        int rows = 20;
-        int cols = 15; //<--- ANYTHING OVER 15 doesnt work, gonna have to make it work for any value
+        int rows = 6;
+        int cols = 15;
         ParkingLot lot = new ParkingLot(rows, cols);
 
         //Parking rate settings (can also change as well) -> (ex.) charges $30 per hr or 3600s

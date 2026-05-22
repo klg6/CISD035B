@@ -31,7 +31,7 @@ public class ParkingLot {
     private Pane layeredCanvas;
     private GridPane backgroundGrid;
 
-    //Track which gateway to use for the next incoming car (alternates which gate they entered from)
+    //track which gateway to use for the next incoming car (alternates which gate they entered from)
     private boolean useBottomLeftGateNext = true;
 
     private DoubleProperty totalRevenue = new SimpleDoubleProperty(0.0);
@@ -40,6 +40,7 @@ public class ParkingLot {
 
     private final DateTimeFormatter logTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
+    //CONSTRUCTOR=======================================================================================================
     public ParkingLot(int rows, int cols) {
         this.rows = rows;
         this.cols = cols;
@@ -49,23 +50,53 @@ public class ParkingLot {
         this.backgroundGrid = new GridPane();
         this.structuralZones = new ArrayList<>();
 
+        /*
+            structuralZones are logical sector queues that lessens the congestion for Vehicle objects traversing
+            the same path, essentially spreading out incoming vehicles. How it is represented:
+
+                ASSUMING the column count is set to 15 (for the sake of simple math):
+
+                -zone 0 represents cols 0-4 (left)
+                -zone 1 represents cols 5-9 (middle)
+                -zone 2 represents cols 10-14 (right)
+
+                               ZONE 0            ZONE 1               ZONE 2
+           ANY ROW#:     | [0][1][2][3][4] | [5][6][7][8][9] | [10][11][12][13][14]
+
+           let's say 3 cars enter, car #1 is responsible for grabbing a spot only in zone 0 if empty, car #2 can only grab
+           a spot in zone 1 if empty and car #3 is obvious. After that, the cycle starts again, so car #4 starts to find
+           a spot at zone 0 and so on.
+
+           Let's say that zone 0 is full for any row, it would mean that the car would either have to find available spots
+           in zone 1 or 2. It makes it easier for the car to determine which zone has more available spots, and it reduces
+           the need for that car to look into zone 0 since its already full.
+         */
         for (int i = 0; i < 3; i++) {
             structuralZones.add(new ArrayDeque<>());
         }
 
+        //maps out newly generated spots/cells as Point objects
         List<Point> masterList = new ArrayList<>();
         for (int c = 0; c < cols; c++) {
             for (int r = 0; r < rows; r++) {
                 masterList.add(new Point(c, r));
             }
         }
+
+        //shuffles available spots randomly to imitate cars choosing random spots. Think of it as shuffling a deck of cards
         Collections.shuffle(masterList);
 
+        //determines the 3 zones in relation to how big the parking lot's column size
+        int zoneWidth = (int) Math.ceil((double) cols / 3);
         for (Point p : masterList) {
-            int zoneId = p.x / 5;
+
+            //essentially represents the zones 0-2 in relation to how big the parking lot's column size
+            int zoneId = Math.min(p.x / zoneWidth, 2);
             structuralZones.get(zoneId).add(p);
         }
 
+        //this is a layout coordinator that ensures that the parking stalls layer and moving vehicle layer are scaled evenly
+        //so that Vehicles don't seem like they are accidentally crossing or overlapping through cells
         backgroundGrid.boundsInLocalProperty().addListener((obs, oldBounds, newBounds) -> {
             layeredCanvas.setPrefSize(newBounds.getWidth(), newBounds.getHeight());
             layeredCanvas.setMaxSize(newBounds.getWidth(), newBounds.getHeight());
@@ -73,7 +104,10 @@ public class ParkingLot {
 
         layeredCanvas.getChildren().add(backgroundGrid);
     }
+    //==================================================================================================================
 
+    //generates individual cells by determined by rows/cols in gridlott class and draws out parking lot
+    //stalls represents cells/spots
     public GridPane generateParkingLot() {
         backgroundGrid.setStyle("-fx-background-color: #1a1a1a;");
         backgroundGrid.setPadding(new Insets(20));
@@ -100,29 +134,43 @@ public class ParkingLot {
     /*
         This function is responsible for how a Vehicle behaves in terms of:
             -how/where they enter/exit from
-            -using pathfinding when entering/exiting to either find spots or leaving lot
+            -uses pathfinding when entering/exiting to either find spots or leaving lot
             -records Vehicle data
     */
     public void simulateParking(Vehicle v, ParkRate rate) {
-        int zonesInspected = 0;
+        int zonesInspected = 0; //a safety counter so that this Vehicle doesn't look for cells/spots forever
+
+        //represents a temporary pointer that will hold the parking section depending on where the Vehicle chooses to look at
         Queue<Point> targetedQueue = null;
 
+        //exactly explains this while loop from line 66-72
         while (zonesInspected < structuralZones.size()) {
+
+            //grabs the section queue that matches the Vehicle's turn index (so by default it starts at zone 0)
             targetedQueue = structuralZones.get(activeZoneTurn);
+
+            //updates the index by 1, so since this Vehicle found a spot at zone 0 in any row, index increments by 1
+            //for the next Vehicle to find an available spot in zone 1 and so forth. Then it cycles back to Zone 0 after Zone 2.
             activeZoneTurn = (activeZoneTurn + 1) % structuralZones.size();
 
+            //simply means when this Vehicle found a spot in whatever zone they are assigned to, it will stop the loop
             if (!targetedQueue.isEmpty()) {
                 break;
             }
+
+            //if the Vehicle is unsuccessful to find a spot in whatever zone they are assigned to, set the targetQueue
+            //to null and increment by 1 for that Vehicle to try again and find another available spot in different zone
             targetedQueue = null;
             zonesInspected++;
         }
 
-        if (targetedQueue == null) return;
+        if (targetedQueue == null) return; //this prevents any new cars to find a spot if all zones in all rows are taken
 
-        Point reservedPoint = targetedQueue.poll();
+        Point reservedPoint = targetedQueue.poll(); //Vehicle snatches first available spot
         int targetCol = reservedPoint.x;
         int targetRow = reservedPoint.y;
+
+        //Vehicle successfully occupies the spot and is recorded on the occupancy 2D array
         occupancy[targetCol][targetRow] = v;
 
         //this is for dynamic coordinate reading (works perfectly on any grid size)
@@ -237,7 +285,10 @@ public class ParkingLot {
                             v.getExitTime().format(logTimeFormatter), v.getPlate(), v.getModel(), v.getType(),
                             v.getAmountPaid(), v.getTotalDuration(), v.getEntryTime().format(logTimeFormatter));
 
-                    structuralZones.get(targetCol / 5).add(new Point(targetCol, targetRow));
+                    int zoneWidth = (int) Math.ceil((double) cols / 3);
+                    int returnZoneId = Math.min(targetCol / zoneWidth, 2);
+
+                    structuralZones.get(returnZoneId).add(new Point(targetCol, targetRow));
                 });
 
                 exitEngine.play();
@@ -248,6 +299,7 @@ public class ParkingLot {
         entryEngine.play();
     }
 
+    //getters
     public Pane getLayeredPaneCanvas() { return layeredCanvas; }
     public DoubleProperty getRevenueProperty() { return totalRevenue; }
     public IntegerProperty getOccupancyProperty() { return currentOccupancy; }
