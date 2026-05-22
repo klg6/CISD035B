@@ -1,4 +1,4 @@
-To find/view the Java files, do:
+To find/view the core Java files, do:
 
-  1. click dropdown of "src" folder
-  2. click dropdown of "com/example/gridlott" folder
+  1. click "src" folder
+  2. click "com" folder
