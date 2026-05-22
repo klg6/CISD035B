@@ -1,7 +1,7 @@
-BEFORE YOU TRY EXECUTING THE CODEBASE, MAKE SURE YOU DO FOLLOWING:
+BEFORE YOU TRY EXECUTING THE CODEBASE, MAKE SURE YOU HAVE DONE THE FOLLOWING:
 
-  1. java release version 21+
-  2. git clone this repository in your IDE
+  1. java release version 21+ installed
+  2. git cloned this repository in your IDE
 
 To find/view the core Java files, do:
 
