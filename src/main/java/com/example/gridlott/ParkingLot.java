@@ -108,7 +108,7 @@ public class ParkingLot {
 
     //generates individual cells by determined by rows/cols in gridlott class and draws out parking lot
     //stalls represents cells/spots
-    public GridPane generateParkingLot() {
+    public void generateParkingLot() {
         backgroundGrid.setStyle("-fx-background-color: #1a1a1a;");
         backgroundGrid.setPadding(new Insets(20));
         backgroundGrid.setAlignment(Pos.CENTER);
@@ -128,7 +128,6 @@ public class ParkingLot {
                 spotUI[c][r] = spot;
             }
         }
-        return backgroundGrid;
     }
 
     /*
@@ -182,8 +181,10 @@ public class ParkingLot {
         Bounds firstCellBounds = spotUI[0][0].getBoundsInParent();
         Bounds lastCellBounds = spotUI[cols - 1][rows - 1].getBoundsInParent();
 
-        //This section is for row aisle (necessary for how Vehicles decide on which row to go on before finding their
-        //respective cells)
+        /*
+        This section is for row aisle (necessary for how Vehicles decide on which row to go on before finding their
+        respective cells)
+        */
         double chosenAisleY;
         if (targetRow == 0) {
             //row 0 always uses the perimeter track running directly above it
