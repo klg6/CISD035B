@@ -106,6 +106,8 @@ public class ParkingLot {
     }
     //==================================================================================================================
 
+    //GENERATION========================================================================================================
+
     //generates individual cells by determined by rows/cols in gridlott class and draws out parking lot
     //stalls represents cells/spots
     public void generateParkingLot() {
@@ -129,7 +131,9 @@ public class ParkingLot {
             }
         }
     }
+    //==================================================================================================================
 
+    //BACK END STUFF====================================================================================================
     /*
         This function is responsible for how a Vehicle behaves in terms of:
             -how/where they enter/exit from
@@ -299,6 +303,7 @@ public class ParkingLot {
 
         entryEngine.play();
     }
+    //==================================================================================================================
 
     //getters
     public Pane getLayeredPaneCanvas() { return layeredCanvas; }
