@@ -21,7 +21,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class ParkingLot {
-    private int rows, cols;
+    private int rows, cols; //TEST
     private Vehicle[][] occupancy;
     private StackPane[][] spotUI;
 
