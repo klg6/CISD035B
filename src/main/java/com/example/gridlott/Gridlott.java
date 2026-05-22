@@ -101,7 +101,7 @@ public class Gridlott extends Application {
         flow.play();
 
         Scene scene = new Scene(root, 1200, 800);
-        stage.setTitle("GRIDLOTT: TASTE THE RAINBOW");
+        stage.setTitle("GRIDLOTT: TASTE THE RAINBOW ");
         stage.setScene(scene);
         stage.show();
     }
