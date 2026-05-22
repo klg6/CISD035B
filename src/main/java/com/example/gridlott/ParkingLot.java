@@ -83,7 +83,7 @@ public class ParkingLot {
             }
         }
 
-        //shuffles available spots randomly to imitate cars choosing random spots. Think of it as shuffling a deck of cards
+        //shuffles available spots randomly to imitate cars choosing random spots. Think of it as shuffling cards
         Collections.shuffle(masterList);
 
         //determines the 3 zones in relation to how big the parking lot's column size
