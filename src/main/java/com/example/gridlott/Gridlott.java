@@ -29,7 +29,7 @@ public class Gridlott extends Application {
         int cols = 15;
         ParkingLot lot = new ParkingLot(rows, cols);
 
-        //sets a vehicles staying duration for their cells and this ranges from 60s up to 240s
+        //sets a vehicles staying duration for their cells and this ranges from 60s up to 180s
         ParkingLot.ParkingDuration duration = lot.new ParkingDuration(60,180);
 
         //Parking rate settings (can also change as well) -> (ex.) charges $30 per hr or 3600s
