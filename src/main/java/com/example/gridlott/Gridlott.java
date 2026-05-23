@@ -29,6 +29,9 @@ public class Gridlott extends Application {
         int cols = 15;
         ParkingLot lot = new ParkingLot(rows, cols);
 
+        //sets a vehicles staying duration for their cells and this ranges from 60s up to 240s
+        ParkingLot.ParkingDuration duration = lot.new ParkingDuration(60,180);
+
         //Parking rate settings (can also change as well) -> (ex.) charges $30 per hr or 3600s
         ParkRate rate = new ParkRate(30, 3600);
         lot.generateParkingLot();
@@ -61,12 +64,15 @@ public class Gridlott extends Application {
         StackPane centeringWrapper = new StackPane(lot.getLayeredPaneCanvas());
         centeringWrapper.setAlignment(Pos.CENTER);
         centeringWrapper.setStyle("-fx-background-color: #1a1a1a;");
+
+        //makes the grid pannable
         ScrollPane sp = new ScrollPane(centeringWrapper);
         sp.setPannable(true);
         sp.setFitToWidth(false);
         sp.setFitToHeight(false);
         sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
         sp.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         centeringWrapper.minWidthProperty().bind(sp.widthProperty().subtract(2));
         centeringWrapper.minHeightProperty().bind(sp.heightProperty().subtract(2));
@@ -75,10 +81,8 @@ public class Gridlott extends Application {
         root.setCenter(sp);
         root.setStyle("-fx-background-color: #1a1a1a;");
 
-        /*
-            This section is responsible for managing flow for each Vehicle object generated. This generates Vehicle
-            objects one at a time with a random fixated value.
-         */
+        /*This section is responsible for managing flow for each Vehicle object generated. This generates Vehicle
+        objects one at a time with a random fixated value.*/
         Random arrivalRand = new Random();
         PauseTransition flow = new PauseTransition(Duration.seconds(0.5));
 
@@ -88,13 +92,13 @@ public class Gridlott extends Application {
 
             Vehicle v = new Vehicle();
             v.createDotToolTip(realCurrentTime);//create the dot tooltip as soon as its created
-            lot.simulateParking(v, rate);//this takes care of how Vehicle objects behave in terms of searching parking
+            lot.simulateParking(v, rate, duration);//this takes care of how Vehicle objects behave in terms of searching parking
 
             //automatically updates the clock in relation to real time clock
             clockLabel.setText("Time: " + LocalTime.now().format(timeFormatter));
 
             //this generates another random additive time for the next Vehicle object to generate
-            double nextArrivalDelay = 0.5 + (arrivalRand.nextDouble() * 2.5);
+            double nextArrivalDelay = 0.5 + (arrivalRand.nextDouble() * 0.5);
             flow.setDuration(Duration.seconds(nextArrivalDelay));
             flow.playFromStart();
         });
