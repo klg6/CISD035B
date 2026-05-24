@@ -38,18 +38,17 @@ public class ParkingLot {
 
 
     //INNER CLASSES=====================================================================================================
-    public class ParkingDuration {
+    public class ParkingDuration {//determines a Vehicle's stay duration in cell
         private final int minDuration;
         private final int maxDuration;
-        private final Random random = new Random(); // Reuse one Random instance for efficiency
+        private final Random random = new Random();
 
         public ParkingDuration(int minDuration, int maxDuration) {
             this.minDuration = minDuration;
             this.maxDuration = maxDuration;
         }
 
-        // This now generates a FRESH random number every single time a car calls it
-        public double getParkingDuration() {
+        public double getParkingDuration() { //generates a random duration depending on user inputs
             return minDuration + (random.nextDouble() * (maxDuration - minDuration));
         }
     }
@@ -242,7 +241,6 @@ public class ParkingLot {
         -uses pathfinding when entering/exiting to either find spots or leaving lot
         -records Vehicle data*/
     public void simulateParking(Vehicle v, ParkRate rate, ParkingDuration p) {
-
         //this temp. pointer represents what zone this Vehicle is assigned to see if there's any available spots
         Queue<Point> targetedQueue = checkZoneTarget();
 
@@ -294,6 +292,7 @@ public class ParkingLot {
         final boolean finalGateChoice = assignedToBottomLeft;
         final double finalAisleY = chosenAisleY;
 
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ENTRY_ENGINE
         //event toggles once this Vehicle object entered the parking lot to find cell
         entryEngine.setOnFinished(moveEvent -> {
 
@@ -307,6 +306,7 @@ public class ParkingLot {
             double parkingStayDuration = p.getParkingDuration();
             PauseTransition stayTimer = new PauseTransition(Duration.seconds(parkingStayDuration));
 
+            //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~STAYTIMER
             //event toggles once the Vehicle object is leaving the cell
             stayTimer.setOnFinished(stayEvent -> {
                 occupancy[targetCol][targetRow] = null;//sets the cell null so vehicles can reserve spots
@@ -321,6 +321,7 @@ public class ParkingLot {
                 //this is for how the Vehicle objects (or dots) traverse along the path (EXITING)
                 PathTransition exitEngine = new PathTransition(Duration.seconds(2.0), exitJourneyPath, v.getDot());
 
+                //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~EXIT_ENGINE
                 //event toggles right when this Vehicle is at their designated exits
                 exitEngine.setOnFinished(cleanUpEvent -> {
                     Tooltip.uninstall(v.getDot(), (Tooltip) v.getDot().getProperties().get("tooltip")); //saves a bit of memory
@@ -330,15 +331,15 @@ public class ParkingLot {
 
                     int zoneWidth = (int) Math.ceil((double) cols / 3);
                     int returnZoneId = Math.min(targetCol / zoneWidth, 2);
-
                     structuralZones.get(returnZoneId).add(new Point(targetCol, targetRow));
                 });
-
+                //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~END_OF_EXIT_ENGINE
                 exitEngine.play();
             });
+            //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~END_OF_STAYTIMER
             view_stayTimer_block: stayTimer.play();
         });
-
+        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~END_OF_ENTRY_ENGINE
         entryEngine.play();
     }
     //==================================================================================================================
