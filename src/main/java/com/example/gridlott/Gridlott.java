@@ -29,8 +29,11 @@ public class Gridlott extends Application {
         int cols = 15;
         ParkingLot lot = new ParkingLot(rows, cols);
 
-        //sets a vehicles staying duration for their cells and this ranges from 60s up to 180s
-        ParkingLot.ParkingDuration duration = lot.new ParkingDuration(60,180);
+        //sets a vehicles staying duration for their cells and this ranges between 60s to 180s
+        ParkingLot.ParkingDuration stayingDuration = lot.new ParkingDuration(60,180);
+
+        //sets a vehicles next arrival delay for entry that ranges between 0.5s to 2.5s
+        ParkingLot.ParkingArrival nextArrivalDelay = lot.new ParkingArrival(0.5, 2.5);
 
         //Parking rate settings (can also change as well) -> (ex.) charges $30 per hr or 3600s
         ParkRate rate = new ParkRate(30, 3600);
@@ -83,7 +86,6 @@ public class Gridlott extends Application {
 
         /*This section is responsible for managing flow for each Vehicle object generated. This generates Vehicle
         objects one at a time with a random fixated value.*/
-        Random arrivalRand = new Random();
         PauseTransition flow = new PauseTransition(Duration.seconds(0.5));
 
         flow.setOnFinished(e -> {
@@ -92,14 +94,13 @@ public class Gridlott extends Application {
 
             Vehicle v = new Vehicle();
             v.createDotToolTip(realCurrentTime);//create the dot tooltip as soon as its created
-            lot.simulateParking(v, rate, duration);//this takes care of how Vehicle objects behave in terms of searching parking
+            lot.simulateParking(v, rate, stayingDuration);//this takes care of how Vehicle objects behave in terms of searching parking
 
             //automatically updates the clock in relation to real time clock
             clockLabel.setText("Time: " + LocalTime.now().format(timeFormatter));
 
             //this generates another random additive time for the next Vehicle object to generate
-            double nextArrivalDelay = 0.5 + (arrivalRand.nextDouble() * 0.5);
-            flow.setDuration(Duration.seconds(nextArrivalDelay));
+            flow.setDuration(Duration.seconds(nextArrivalDelay.getRandomizeDuration()));
             flow.playFromStart();
         });
         flow.play();

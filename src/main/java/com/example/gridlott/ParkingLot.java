@@ -38,19 +38,30 @@ public class ParkingLot {
 
 
     //INNER CLASSES=====================================================================================================
-    public class ParkingDuration {//determines a Vehicle's stay duration in cell
-        private final int minDuration;
-        private final int maxDuration;
+    public abstract class randomizeDuration{ //PARENT INNER CLASS
+        private final double minDuration;
+        private final double maxDuration;
         private final Random random = new Random();
 
-        public ParkingDuration(int minDuration, int maxDuration) {
+        public randomizeDuration(double minDuration, double maxDuration){
             this.minDuration = minDuration;
             this.maxDuration = maxDuration;
         }
 
-        public double getParkingDuration() { //generates a random duration depending on user inputs
+        //generates a random duration depending on user inputs for either parking duration or arrival
+        public double getRandomizeDuration(){
             return minDuration + (random.nextDouble() * (maxDuration - minDuration));
         }
+    }
+
+    //CHILD INNER CLASS
+    public class ParkingDuration extends randomizeDuration { //determines a Vehicle's stay duration in cell
+        public ParkingDuration(double minDuration, double maxDuration) { super(minDuration, maxDuration); }
+    }
+
+    //CHILD INNER CLASS
+    public class ParkingArrival extends randomizeDuration{ //determines a Vehicle's random entry generation
+        public ParkingArrival(double minDuration, double maxDuration){ super(minDuration, maxDuration); }
     }
     //==================================================================================================================
 
@@ -303,7 +314,7 @@ public class ParkingLot {
             totalCars.set(totalCars.get() + 1);
 
             //this is for how long a Vehicle object occupies a cell
-            double parkingStayDuration = p.getParkingDuration();
+            double parkingStayDuration = p.getRandomizeDuration();
             PauseTransition stayTimer = new PauseTransition(Duration.seconds(parkingStayDuration));
 
             //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~STAYTIMER
