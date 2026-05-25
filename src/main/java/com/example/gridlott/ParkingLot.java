@@ -45,6 +45,14 @@ public class ParkingLot {
         private final Random random = new Random();
 
         public randomizeDuration(double minDuration, double maxDuration){
+
+            if (minDuration <= 0 || maxDuration <= 0) {
+                throw new IllegalArgumentException("Duration values must be greater than zero!");
+            }
+            if (minDuration > maxDuration) {
+                throw new IllegalArgumentException("Minimum duration cannot be greater than maximum duration!");
+            }
+
             this.minDuration = minDuration;
             this.maxDuration = maxDuration;
         }
