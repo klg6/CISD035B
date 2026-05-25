@@ -30,10 +30,10 @@ public class Gridlott extends Application {
         ParkingLot lot = new ParkingLot(rows, cols);
 
         //sets a vehicles staying duration for their cells and this ranges between 60s to 180s
-        ParkingLot.ParkingDuration stayingDuration = lot.new ParkingDuration(60,180);
+        ParkingLot.randomizeDuration stayingDuration = lot.new randomizeDuration(60,180);
 
         //sets a vehicles next arrival delay for entry that ranges between 0.5s to 2.5s
-        ParkingLot.ParkingArrival nextArrivalDelay = lot.new ParkingArrival(0.5, 2.5);
+        ParkingLot.randomizeDuration nextArrivalDelay = lot.new randomizeDuration(0.5, 2.5);
 
         //Parking rate settings (can also change as well) -> (ex.) charges $30 per hr or 3600s
         ParkRate rate = new ParkRate(30, 3600);

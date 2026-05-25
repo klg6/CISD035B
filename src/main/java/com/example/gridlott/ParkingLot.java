@@ -38,7 +38,8 @@ public class ParkingLot {
 
 
     //INNER CLASSES=====================================================================================================
-    public abstract class randomizeDuration{ //PARENT INNER CLASS
+    //generates a random duration depending on user inputs for either parking duration or arrival
+    public class randomizeDuration{
         private final double minDuration;
         private final double maxDuration;
         private final Random random = new Random();
@@ -48,20 +49,9 @@ public class ParkingLot {
             this.maxDuration = maxDuration;
         }
 
-        //generates a random duration depending on user inputs for either parking duration or arrival
-        public double getRandomizeDuration(){
+        public double getRandomizeDuration(){ //generates a range dependent on user input
             return minDuration + (random.nextDouble() * (maxDuration - minDuration));
         }
-    }
-
-    //CHILD INNER CLASS
-    public class ParkingDuration extends randomizeDuration { //determines a Vehicle's stay duration in cell
-        public ParkingDuration(double minDuration, double maxDuration) { super(minDuration, maxDuration); }
-    }
-
-    //CHILD INNER CLASS
-    public class ParkingArrival extends randomizeDuration{ //determines a Vehicle's random entry generation
-        public ParkingArrival(double minDuration, double maxDuration){ super(minDuration, maxDuration); }
     }
     //==================================================================================================================
 
@@ -251,7 +241,7 @@ public class ParkingLot {
         -how/where they enter/exit from
         -uses pathfinding when entering/exiting to either find spots or leaving lot
         -records Vehicle data*/
-    public void simulateParking(Vehicle v, ParkRate rate, ParkingDuration p) {
+    public void simulateParking(Vehicle v, ParkRate rate, randomizeDuration p) {
         //this temp. pointer represents what zone this Vehicle is assigned to see if there's any available spots
         Queue<Point> targetedQueue = checkZoneTarget();
 
