@@ -36,7 +36,7 @@ public class Gridlott extends Application {
         ParkingLot.randomizeDuration nextArrivalDelay = lot.new randomizeDuration(0.5, 2.5);
 
         //Parking rate settings (can also change as well) -> (ex.) charges $30 per hr or 3600s
-        ParkRate rate = new ParkRate(30, 3600);
+        ParkingLot.ParkRate rate = lot.new ParkRate(30, 3600);
         lot.generateParkingLot();
 
         //these sets up the label for live feed as a foundation
@@ -57,7 +57,7 @@ public class Gridlott extends Application {
         lot.getOccupancyProperty().addListener((obs, o, n) -> occLabel.setText("Occupancy: " + n.intValue() + " / " + lot.getMaxCapacity()));
         lot.getTotalCars().addListener((obs, o, n) -> carsLabel.setText("Total Cars: " + n.intValue()));
 
-        //creates the central hub for revene,occupancy, amount of cars (lifetime), and real time clock
+        //creates the central hub for revenue,occupancy, amount of cars (lifetime), and real time clock
         HBox dashboard = new HBox(40, revLabel, occLabel, carsLabel, clockLabel);
         dashboard.setAlignment(Pos.CENTER);
         dashboard.setPadding(new Insets(15));
