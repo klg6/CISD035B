@@ -36,7 +36,6 @@ public class ParkingLot {
     private IntegerProperty totalCars = new SimpleIntegerProperty(0);
     private final DateTimeFormatter logTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss");
 
-
     //INNER CLASSES=====================================================================================================
 
     //generates a random duration depending on user inputs for either parking duration or arrival
@@ -69,11 +68,11 @@ public class ParkingLot {
 
         public ParkRate(double fee, int perSeconds){
 
-            if (fee < 0) { //can be zero as well since there's such as free parking
+            if (fee < 0) {
                 throw new IllegalArgumentException("Fee cannot be negative!");
             }
 
-            if (perSeconds <= 0) { //perSeconds must be greater than 0 to avoid division by zero
+            if (perSeconds <= 0) { //avoids division by zero
                 throw new IllegalArgumentException("perSeconds must be greater than zero!");
             }
 
@@ -81,7 +80,7 @@ public class ParkingLot {
             this.perSeconds = perSeconds;
         }
 
-        public double processFeeRate(Vehicle vehicle){//determines the rate fee for vehicles
+        public double processFeeRate(Vehicle vehicle){
             double total = (fee * vehicle.getTotalDuration()) / perSeconds;
             return Math.round(total * 100) / 100.0;
         }
@@ -131,14 +130,14 @@ public class ParkingLot {
             }
         }
 
-        //shuffles available spots randomly to imitate cars choosing random spots. Think of it as shuffling cards
+        //shuffles available spots randomly to imitate cars choosing random spots
         Collections.shuffle(masterList);
 
         //determines the 3 zones in relation to how big the parking lot's column size
         int zoneWidth = (int) Math.ceil((double) cols / 3);
         for (Point p : masterList) {
 
-            //essentially represents the zones 0-2 in relation to how big the parking lot's column size
+            //zoneId represents zones 0-2 in relation to how big the parking lot's column size
             int zoneId = Math.min(p.x / zoneWidth, 2);
             structuralZones.get(zoneId).add(p);
         }
@@ -361,7 +360,7 @@ public class ParkingLot {
                     Tooltip.uninstall(v.getDot(), (Tooltip) v.getDot().getProperties().get("tooltip")); //saves a bit of memory
                     layeredCanvas.getChildren().remove(v.getDot()); //also saves a bit of memory
 
-                    recordVehicleData(v, rate, parkingStayDuration);//print Vehicle data
+                    recordVehicleData(v, rate, parkingStayDuration);
 
                     int zoneWidth = (int) Math.ceil((double) cols / 3);
                     int returnZoneId = Math.min(targetCol / zoneWidth, 2);

@@ -21,7 +21,7 @@ public class Vehicle {
     private double amountPaid;
 
     //INNER CLASSES=====================================================================================================
-    enum Model { //vehicle models
+    enum Model {
         TOYOTA, VOLKSWAGEN, HONDA, FORD, CHEVROLET, HYUNDAI, NISSAN, KIA, TESLA,
         BMW, MERCEDES_BENZ, AUDI, PORSCHE, FERRARI, LAMBORGHINI, MAZDA, SUBARU,
         CHRYSLER, JEEP, DODGE, RAM, BUICK, CADILLAC, GMC, LAND_ROVER, JAGUAR,
@@ -29,12 +29,11 @@ public class Vehicle {
         BYD, NIO, XPENG, LUCID, RIVIAN, ACURA, LEXUS
     }
 
-    //vehicle types
     enum Type { PICKUP_TRUCK, SUV, COUPE, MOTORCYCLE, VAN, SEDAN, HATCHBACK }
     //==================================================================================================================
 
     //PRIVATE GENERATION FUNCTIONS======================================================================================
-    private String generateRandomPlate() {//generates random plate number dedicated to CA license plates
+    private String generateRandomPlate() {//dedicated to CA license plates
         Random random = new Random();
         StringBuilder plateBuilder = new StringBuilder();
         plateBuilder.append(random.nextInt(9) + 1);
@@ -61,14 +60,14 @@ public class Vehicle {
         return vehicleModels.get(random.nextInt(vehicleModels.size()));
     }
 
-    private Color generateColor() {//generates a random color of the spectrum dedicated for dots
+    private Color generateColor() {//dedicated for dots
         Random rand = new Random();
         return Color.rgb(rand.nextInt(256), rand.nextInt(256), rand.nextInt(256));
     }
     //==================================================================================================================
 
     //CONSTRUCTOR=======================================================================================================
-    public Vehicle() {//Constructor for each Vehicle Object associated with default values
+    public Vehicle() {
         this.plate = generateRandomPlate();
         this.type = generateVehicleType();
         this.entryTime = LocalTime.MIDNIGHT.truncatedTo(ChronoUnit.SECONDS);
@@ -101,7 +100,8 @@ public class Vehicle {
         model/type/entryTime/plate
     */
     public void createDotToolTip(LocalTime time) {
-        this.dot = new Circle(9, generateColor());
+        Color dynamicColor = generateColor();
+        this.dot = new Circle(9, dynamicColor);
         entryTime = time;
 
         String info = "Plate: " + plate +
@@ -111,13 +111,19 @@ public class Vehicle {
 
         this.dot.setPickOnBounds(true);
         Tooltip vehicleTooltip = new Tooltip(info);
+
+        String hexColor = String.format("#%02X%02X%02X",
+                (int) (dynamicColor.getRed() * 255),
+                (int) (dynamicColor.getGreen() * 255),
+                (int) (dynamicColor.getBlue() * 255));
+
         vehicleTooltip.setStyle(
                 "-fx-font-size: 16px; " +
                         "-fx-font-weight: bold; " +
                         "-fx-background-radius: 5; " +
                         "-fx-padding: 10px;" +
                         "-fx-font-family: 'Courier New';" +
-                        "-fx-border-color: red;"
+                        "-fx-border-color: " + hexColor + ";"
         );
 
         Tooltip.install(this.dot, vehicleTooltip);

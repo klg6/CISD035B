@@ -24,51 +24,20 @@ public class Gridlott extends Application {
     @Override
     public void start(Stage stage) {
 
-        //Dimensions for parking lot (you can change rows/cols values)
-        int rows = 6;
-        int cols = 15;
-        ParkingLot lot = new ParkingLot(rows, cols);
+        ParkingLot lot = new ParkingLot(6, 15);
+        ParkingLot.randomizeDuration stayingDuration = lot.new randomizeDuration(60,180); //ranges between 60s-180s
+        ParkingLot.randomizeDuration nextArrivalDelay = lot.new randomizeDuration(0.5, 2.5); //ranges between 0.5s-2.5s
+        ParkingLot.ParkRate rate = lot.new ParkRate(30, 3600); //charges $30/hr
 
-        //sets a vehicles staying duration for their cells and this ranges between 60s to 180s
-        ParkingLot.randomizeDuration stayingDuration = lot.new randomizeDuration(60,180);
-
-        //sets a vehicles next arrival delay for entry that ranges between 0.5s to 2.5s
-        ParkingLot.randomizeDuration nextArrivalDelay = lot.new randomizeDuration(0.5, 2.5);
-
-        //Parking rate settings (can also change as well) -> (ex.) charges $30 per hr or 3600s
-        ParkingLot.ParkRate rate = lot.new ParkRate(30, 3600);
         lot.generateParkingLot();
+        DashBoardUI dashboard = setUpDashBoard(lot);
 
-        //these sets up the label for live feed as a foundation
-        Label revLabel = new Label("Revenue: $0.00");
-        Label occLabel = new Label("Occupancy: 0 / " + lot.getMaxCapacity());
-        Label carsLabel = new Label("Total Cars: 0");
-        Label clockLabel = new Label("Time: " + LocalTime.now().format(timeFormatter));
-
-        //sets the font size, font family, and other custom text configurations for Label creations
-        String style = "-fx-text-fill: #00ff00; -fx-font-size: 20px; -fx-font-family: 'Courier New'; -fx-font-weight: bold;";
-        revLabel.setStyle(style);
-        occLabel.setStyle(style);
-        carsLabel.setStyle(style);
-        clockLabel.setStyle(style);
-
-        //Tracks live feed from ParkingLot data
-        lot.getRevenueProperty().addListener((obs, o, n) -> revLabel.setText(String.format("Revenue: $%.2f", n.doubleValue())));
-        lot.getOccupancyProperty().addListener((obs, o, n) -> occLabel.setText("Occupancy: " + n.intValue() + " / " + lot.getMaxCapacity()));
-        lot.getTotalCars().addListener((obs, o, n) -> carsLabel.setText("Total Cars: " + n.intValue()));
-
-        //creates the central hub for revenue,occupancy, amount of cars (lifetime), and real time clock
-        HBox dashboard = new HBox(40, revLabel, occLabel, carsLabel, clockLabel);
-        dashboard.setAlignment(Pos.CENTER);
-        dashboard.setPadding(new Insets(15));
-        dashboard.setStyle("-fx-background-color: #2a2a2a; -fx-border-color: #444; -fx-border-width: 0 0 2 0;");
-
-        //This huge section centers the grid since by default its stuck on the top left of the corner
+        //This centers the grid since by default its stuck on the top left of the corner
         StackPane centeringWrapper = new StackPane(lot.getLayeredPaneCanvas());
         centeringWrapper.setAlignment(Pos.CENTER);
         centeringWrapper.setStyle("-fx-background-color: #1a1a1a;");
 
-        //makes the grid pannable
+        //makes the grid pannable along with custom configurations
         ScrollPane sp = new ScrollPane(centeringWrapper);
         sp.setPannable(true);
         sp.setFitToWidth(false);
@@ -80,7 +49,7 @@ public class Gridlott extends Application {
         centeringWrapper.minWidthProperty().bind(sp.widthProperty().subtract(2));
         centeringWrapper.minHeightProperty().bind(sp.heightProperty().subtract(2));
         BorderPane root = new BorderPane();
-        root.setTop(dashboard);
+        root.setTop(dashboard.container);
         root.setCenter(sp);
         root.setStyle("-fx-background-color: #1a1a1a;");
 
@@ -97,7 +66,7 @@ public class Gridlott extends Application {
             lot.simulateParking(v, rate, stayingDuration);//this takes care of how Vehicle objects behave in terms of searching parking
 
             //automatically updates the clock in relation to real time clock
-            clockLabel.setText("Time: " + LocalTime.now().format(timeFormatter));
+            dashboard.clockLabel.setText("Time: " + LocalTime.now().format(timeFormatter));
 
             //this generates another random additive time for the next Vehicle object to generate
             flow.setDuration(Duration.seconds(nextArrivalDelay.getRandomizeDuration()));
@@ -110,6 +79,39 @@ public class Gridlott extends Application {
         stage.setScene(scene);
         stage.show();
     }
+
+    public DashBoardUI setUpDashBoard(ParkingLot lot){ //creates the dashboard and is used for making code readable
+
+        //these sets up the label for live feed as a foundation
+        Label revLabel = new Label("Revenue: $0.00");
+        Label occLabel = new Label("Occupancy: 0 / " + lot.getMaxCapacity());
+        Label carsLabel = new Label("Total Cars: 0");
+        Label clockLabel = new Label("Time: " + LocalTime.now().format(timeFormatter));
+
+        //sets the font size, font family, and other custom text configurations for Label creations
+        String style = "-fx-text-fill: #FFFFFF; -fx-font-size: 20px; -fx-font-family: 'Courier New'; -fx-font-weight: bold;";
+        revLabel.setStyle(style);
+        occLabel.setStyle(style);
+        carsLabel.setStyle(style);
+        clockLabel.setStyle(style);
+
+        //Tracks live feed from ParkingLot data
+        lot.getRevenueProperty().addListener((obs, o, n) -> revLabel.setText(String.format("Revenue: $%.2f", n.doubleValue())));
+        lot.getOccupancyProperty().addListener((obs, o, n) -> occLabel.setText("Occupancy: " + n.intValue() + " / " + lot.getMaxCapacity()));
+        lot.getTotalCars().addListener((obs, o, n) -> carsLabel.setText("Total Cars: " + n.intValue()));
+
+        //creates the central hub for revenue,occupancy, amount of cars (lifetime), and real time clock
+        HBox dashboard = new HBox(40, revLabel, occLabel, carsLabel, clockLabel);
+        dashboard.setAlignment(Pos.CENTER);
+        dashboard.setPadding(new Insets(15));
+        dashboard.setStyle("-fx-background-color: #2a2a2a; -fx-border-color: #444; -fx-border-width: 0 0 2 0;");
+
+        return new DashBoardUI(dashboard, clockLabel);
+    }
+
+    //very useful for returning & self-documenting code since record type acts as a mini class
+    public record DashBoardUI(HBox container, Label clockLabel){}
+
     public static void main(String[] args) {
         launch();
     }
