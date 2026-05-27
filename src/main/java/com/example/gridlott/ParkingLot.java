@@ -273,7 +273,7 @@ public class ParkingLot {
         -how/where they enter/exit from
         -uses pathfinding when entering/exiting to either find spots or leaving lot
         -records Vehicle data*/
-    public void simulateParking(Vehicle v, ParkRate rate, randomizeDuration p) {
+    public void simulateParking(Vehicle v, ParkRate rate, randomizeDuration p, Gridlott.DashBoardUI g) {
         //this temp. pointer represents what zone this Vehicle is assigned to see if there's any available spots
         Queue<Point> targetedQueue = checkZoneTarget();
 
@@ -326,6 +326,9 @@ public class ParkingLot {
         final double finalAisleY = chosenAisleY;
 
         //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ENTRY_ENGINE
+
+        Gridlott gridlott = new Gridlott();
+
         //event toggles once this Vehicle object entered the parking lot to find cell
         entryEngine.setOnFinished(moveEvent -> {
 
@@ -360,6 +363,7 @@ public class ParkingLot {
                     Tooltip.uninstall(v.getDot(), (Tooltip) v.getDot().getProperties().get("tooltip")); //saves a bit of memory
                     layeredCanvas.getChildren().remove(v.getDot()); //also saves a bit of memory
 
+                    gridlott.flashLabelGreen(g.revLabel());
                     recordVehicleData(v, rate, parkingStayDuration);
 
                     int zoneWidth = (int) Math.ceil((double) cols / 3);

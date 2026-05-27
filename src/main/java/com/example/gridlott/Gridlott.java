@@ -1,5 +1,6 @@
 package com.example.gridlott;
 
+import javafx.animation.FadeTransition;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
@@ -63,7 +64,7 @@ public class Gridlott extends Application {
 
             Vehicle v = new Vehicle();
             v.createDotToolTip(realCurrentTime);//create the dot tooltip as soon as its created
-            lot.simulateParking(v, rate, stayingDuration);//this takes care of how Vehicle objects behave in terms of searching parking
+            lot.simulateParking(v, rate, stayingDuration, dashboard);//this takes care of how Vehicle objects behave in terms of searching parking
 
             //automatically updates the clock in relation to real time clock
             dashboard.clockLabel.setText("Time: " + LocalTime.now().format(timeFormatter));
@@ -106,11 +107,34 @@ public class Gridlott extends Application {
         dashboard.setPadding(new Insets(15));
         dashboard.setStyle("-fx-background-color: #2a2a2a; -fx-border-color: #444; -fx-border-width: 0 0 2 0;");
 
-        return new DashBoardUI(dashboard, clockLabel);
+        return new DashBoardUI(dashboard, clockLabel, revLabel);
+    }
+
+    public void flashLabelGreen(Label label) {
+        // 1. Change text color to green immediately
+        label.setStyle("-fx-text-fill: #00FF00; -fx-font-size: 20px; -fx-font-family: 'Courier New'; -fx-font-weight: bold;");
+
+        // 2. Create a fade out transition to simulate the fade effect
+        FadeTransition fadeOut = new FadeTransition(Duration.millis(300), label);
+        fadeOut.setFromValue(1.0);
+        fadeOut.setToValue(0.4); // Dims slightly to emphasize the fade
+
+        // 3. Create a fade back in transition that restores full opacity and original color
+        FadeTransition fadeIn = new FadeTransition(Duration.millis(300), label);
+        fadeIn.setFromValue(0.4);
+        fadeIn.setToValue(1.0);
+
+        // When the fade out finishes, restore the original white text style and fade back up
+        fadeOut.setOnFinished(e -> {
+            label.setStyle("-fx-text-fill: #FFFFFF; -fx-font-size: 20px; -fx-font-family: 'Courier New'; -fx-font-weight: 900;");
+            fadeIn.play();
+        });
+
+        fadeOut.play();
     }
 
     //very useful for returning & self-documenting code since record type acts as a mini class
-    public record DashBoardUI(HBox container, Label clockLabel){}
+    public record DashBoardUI(HBox container, Label clockLabel, Label revLabel){}
 
     public static void main(String[] args) {
         launch();
