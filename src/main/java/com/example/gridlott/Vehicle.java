@@ -3,6 +3,7 @@ package com.example.gridlott;
 import javafx.scene.control.Tooltip;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
+import javafx.util.Duration;
 
 import java.time.LocalTime;
 import java.time.temporal.ChronoUnit;
@@ -111,6 +112,8 @@ public class Vehicle {
 
         this.dot.setPickOnBounds(true);
         Tooltip vehicleTooltip = new Tooltip(info);
+
+        vehicleTooltip.setShowDelay(Duration.millis(100));//makes the tooltip appear much faster than having to wait
 
         String hexColor = String.format("#%02X%02X%02X",
                 (int) (dynamicColor.getRed() * 255),
