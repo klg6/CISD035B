@@ -1,7 +1,7 @@
 package com.example.gridlott;
 
 import javafx.scene.control.Tooltip;
-import javafx.scene.paint.Color;
+import javafx.scene.paint.*;
 import javafx.scene.shape.Circle;
 import javafx.util.Duration;
 
@@ -61,8 +61,24 @@ public class Vehicle {
         return vehicleModels.get(random.nextInt(vehicleModels.size()));
     }
 
-    private Color generateColor() {//dedicated for dots
+    private Paint generateColor() { // Return type changed to Paint to support Gradients
         Random rand = new Random();
+
+        //roll a 200-sided die. If it lands on 1, its 0.5% rarity
+        if (rand.nextInt(200) < 1) {
+            //creates a linear gradient spectrum across the dot
+            return new LinearGradient(
+                    0, 1, 1, 0, true, CycleMethod.NO_CYCLE,
+                    new Stop(0.0, Color.DARKGREEN),
+                    new Stop(0.2, Color.BLACK),
+                    new Stop(0.4, Color.DARKGREEN),
+                    new Stop(0.6, Color.GREENYELLOW),
+                    new Stop(0.8, Color.YELLOWGREEN),
+                    new Stop(1.0, Color.WHITE)
+            );
+        }
+
+        //99.5% chance: regular random solid color
         return Color.rgb(rand.nextInt(256), rand.nextInt(256), rand.nextInt(256));
     }
     //==================================================================================================================
@@ -101,9 +117,18 @@ public class Vehicle {
         model/type/entryTime/plate
     */
     public void createDotToolTip(LocalTime time) {
-        Color dynamicColor = generateColor();
-        this.dot = new Circle(9, dynamicColor);
+        Paint dynamicColor = generateColor();
         entryTime = time;
+
+        //identify if this vehicle hit has that 0.5% rarity
+        boolean isRareMatrix = (dynamicColor instanceof LinearGradient);
+
+        this.dot = new Circle(9, dynamicColor);
+
+        if (isRareMatrix) {
+            this.dot.setStroke(Color.GREENYELLOW);
+            this.dot.setStrokeWidth(1.5);
+        }
 
         String info = "Plate: " + plate +
                 "\nType: " + type.toString() +
@@ -112,24 +137,43 @@ public class Vehicle {
 
         this.dot.setPickOnBounds(true);
         Tooltip vehicleTooltip = new Tooltip(info);
+        vehicleTooltip.setShowDelay(Duration.millis(100));
 
-        vehicleTooltip.setShowDelay(Duration.millis(100));//makes the tooltip appear much faster than having to wait
+        //conditional UI styling for dots that are 99.5% and 0.5% rarity
+        String cardStyle;
+        if (!isRareMatrix) {
+            //98% Standard Base Style ---
+            Color solidColor = (Color) dynamicColor;
+            String hexColor = String.format("#%02X%02X%02X",
+                    (int) (solidColor.getRed() * 255),
+                    (int) (solidColor.getGreen() * 255),
+                    (int) (solidColor.getBlue() * 255));
 
-        String hexColor = String.format("#%02X%02X%02X",
-                (int) (dynamicColor.getRed() * 255),
-                (int) (dynamicColor.getGreen() * 255),
-                (int) (dynamicColor.getBlue() * 255));
+            cardStyle = "-fx-background-color: rgba(28, 28, 28, 0.75); " +
+                    "-fx-border-color: " + hexColor + "; " +
+                    "-fx-border-width: 1px;";
+        } else {
+            //0.5% rare card ticket ---
+            cardStyle = "-fx-background-color: linear-gradient(to bottom right, #001a00, #000000, #052e05); " +
+                    "-fx-border-color: linear-gradient(to right, black, #00FF00, #ADFF2F, #7FFF00, black); " +
+                    "-fx-border-width: 1px; " +
+                    "-fx-inner-border-color: #00FF00;";
 
+            this.dot.setStroke(Color.rgb(173, 255, 47, 0.3)); //GREENYELLOW with 30% opacity
+            this.dot.setStrokeWidth(3.5);
+        }
+
+        //apply corporate terminal typography styling
         vehicleTooltip.setStyle(
                 "-fx-font-size: 16px; " +
                         "-fx-font-weight: bold; " +
                         "-fx-background-radius: 5; " +
                         "-fx-padding: 10px;" +
                         "-fx-font-family: 'Courier New';" +
-                        "-fx-border-color: " + hexColor + ";"
+                        cardStyle
         );
 
         Tooltip.install(this.dot, vehicleTooltip);
-        this.dot.getProperties().put("tooltip", vehicleTooltip); //keeps reference for clean uninstallation later
+        this.dot.getProperties().put("tooltip", vehicleTooltip);
     }
 }
