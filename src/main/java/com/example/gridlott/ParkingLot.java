@@ -118,8 +118,11 @@ public class ParkingLot {
     }
 
     private void configureGridStyle(GridPane grid, boolean isGroundFloor) {
-        grid.setStyle("-fx-background-color: " + BACKGROUND_HEX + ";");
-        grid.setPadding(new Insets(60, 40, 40, 40));
+
+        grid.setStyle("-fx-background-color: #131314;");
+        grid.setPadding(new Insets(30, 40, 30, 40));
+        grid.setHgap(0);
+        grid.setVgap(0);
         grid.setAlignment(Pos.CENTER);
         if (!isGroundFloor) {
             grid.setVisible(false);
@@ -128,14 +131,20 @@ public class ParkingLot {
     }
 
     private StackPane createParkingStall(int row) {
+        // Reference layout dimensions
         Rectangle stall = new Rectangle(CELL_WIDTH, CELL_HEIGHT);
         stall.setFill(Color.TRANSPARENT);
-        stall.setStroke(Color.grayRgb(60));
+
+        // Thin, sleek dark lines matching the reference dashboard
+        stall.setStroke(Color.web("#2d2d30"));
+        stall.setStrokeWidth(0.8);
         stall.setMouseTransparent(true);
 
         StackPane spot = new StackPane(stall);
-        int bottomMargin = (row % 2 == 0) ? 0 : 40;
-        GridPane.setMargin(spot, new Insets(0, 2, bottomMargin, 2));
+
+        // Creates clear separation between the paired driving tracks/aisles
+        int bottomMargin = (row % 2 == 0) ? 0 : 25;
+        GridPane.setMargin(spot, new Insets(0, 1, bottomMargin, 1));
         return spot;
     }
 
@@ -453,11 +462,33 @@ public class ParkingLot {
 
     private double determineAisleY(int targetRow, int targetCol, Bounds firstCellBounds) {
         if (targetRow == 0) {
-            return firstCellBounds.getMinY() - (firstCellBounds.getHeight() * 0.4);
+            //top Aisle (Above Row 0)
+            //get the absolute top boundary of the row 0 stall
+            Bounds row0Bounds = spotUI[0][targetCol][0].getBoundsInParent();
+            double row0TopY = row0Bounds.getMinY();
+
+            //instead of dividing cleanly by 2 (which can compress it if the node bounds sit at 0),
+            //we offset it exactly 15 to 20 pixels above the top of the parking stall.
+            return row0TopY - 18.0;
+
         } else {
-            int servingOddRow = (targetRow % 2 == 0) ? targetRow - 1 : targetRow;
-            Bounds oddRowCellBounds = spotUI[0][targetCol][servingOddRow].getBoundsInParent();
-            return oddRowCellBounds.getMaxY() + (oddRowCellBounds.getHeight() * 0.25);
+            //intermediate Driving Aisles
+            int rowAbove = (targetRow % 2 == 0) ? targetRow - 1 : targetRow;
+            int rowBelow = rowAbove + 1;
+
+            Bounds boundsAbove = spotUI[0][targetCol][rowAbove].getBoundsInParent();
+
+            if (rowBelow >= rows) {
+                double rowAboveBottomY = boundsAbove.getMaxY();
+                return rowAboveBottomY + 12.5;
+            }
+
+            Bounds boundsBelow = spotUI[0][targetCol][rowBelow].getBoundsInParent();
+
+            double bottomOfAboveRow = boundsAbove.getMaxY();
+            double topOfBelowRow = boundsBelow.getMinY();
+
+            return bottomOfAboveRow + ((topOfBelowRow - bottomOfAboveRow) / 2.0);
         }
     }
 
