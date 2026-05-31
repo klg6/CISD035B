@@ -2,6 +2,7 @@ package com.example.gridlott;
 
 import javafx.animation.PathTransition;
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.beans.property.*;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
@@ -33,7 +34,6 @@ public class ParkingLot {
     private int floors = 1;
     private boolean rampsEnabled = false;
     private final int rows, cols;
-
     private Vehicle[][][] occupancy;
     private StackPane[][][] spotUI;
     private final List<List<Queue<Point>>> floorStructuralZones = new ArrayList<>();
@@ -42,6 +42,7 @@ public class ParkingLot {
     //UI LAYOUT CONTAINERS
     private final Pane layeredCanvas = new Pane();
     private final List<GridPane> floorGrids = new ArrayList<>();
+    private final List<Pane> pathOverlayLayers = new ArrayList<>(); //Overlay vector sheets for structural paths
     private int currentlyViewedFloor = 0;
 
     //DASHBOARDUI VARIABLES
@@ -71,6 +72,7 @@ public class ParkingLot {
         this.spotUI = new StackPane[floors][cols][rows];
         this.floorStructuralZones.clear();
         this.floorGrids.clear();
+        this.pathOverlayLayers.clear();
 
         int zoneWidth = (int) Math.ceil((double) cols / 3);
 
@@ -92,7 +94,12 @@ public class ParkingLot {
 
             GridPane grid = new GridPane();
             floorGrids.add(grid);
-            if (f == 0) layeredCanvas.getChildren().add(grid);
+
+            Pane overlay = new Pane();
+            overlay.setMouseTransparent(true);
+            pathOverlayLayers.add(overlay);
+
+            layeredCanvas.getChildren().addAll(grid, overlay);
         }
 
         floorGrids.get(0).boundsInLocalProperty().addListener((obs, oldBounds, newBounds) -> {
@@ -113,12 +120,14 @@ public class ParkingLot {
                     spotUI[f][c][r] = spot;
                 }
             }
-            if (f > 0) layeredCanvas.getChildren().add(grid);
+        }
+
+        if (Config.showPaths) {
+            Platform.runLater(() -> renderFloorPaths(0));
         }
     }
 
     private void configureGridStyle(GridPane grid, boolean isGroundFloor) {
-
         grid.setStyle("-fx-background-color: #131314;");
         grid.setPadding(new Insets(30, 40, 30, 40));
         grid.setHgap(0);
@@ -131,18 +140,13 @@ public class ParkingLot {
     }
 
     private StackPane createParkingStall(int row) {
-        // Reference layout dimensions
         Rectangle stall = new Rectangle(CELL_WIDTH, CELL_HEIGHT);
         stall.setFill(Color.TRANSPARENT);
-
-        // Thin, sleek dark lines matching the reference dashboard
         stall.setStroke(Color.web("#2d2d30"));
         stall.setStrokeWidth(0.8);
         stall.setMouseTransparent(true);
 
         StackPane spot = new StackPane(stall);
-
-        // Creates clear separation between the paired driving tracks/aisles
         int bottomMargin = (row % 2 == 0) ? 0 : 25;
         GridPane.setMargin(spot, new Insets(0, 1, bottomMargin, 1));
         return spot;
@@ -156,6 +160,13 @@ public class ParkingLot {
             boolean isTarget = (f == floorIndex);
             floorGrids.get(f).setVisible(isTarget);
             floorGrids.get(f).setMouseTransparent(!isTarget);
+
+            if (f < pathOverlayLayers.size()) {
+                pathOverlayLayers.get(f).getChildren().clear();
+                if (isTarget && Config.showPaths) {
+                    renderFloorPaths(floorIndex);
+                }
+            }
         }
         syncAllDotsVisibility();
     }
@@ -173,6 +184,102 @@ public class ParkingLot {
         if (currentPhysicalFloor != null) {
             dot.setVisible(currentPhysicalFloor == currentlyViewedFloor);
         }
+    }
+
+    private void renderFloorPaths(int floorIndex) {//shows the pathing if enabled in Config class
+        Pane currentOverlay = pathOverlayLayers.get(floorIndex);
+        currentOverlay.getChildren().clear();
+
+        Bounds first = spotUI[floorIndex][0][0].getBoundsInParent();
+        Bounds last = spotUI[floorIndex][cols - 1][rows - 1].getBoundsInParent();
+
+        double leftX = first.getMinX() - 20.0;
+        double rightX = last.getMaxX() + 20.0;
+
+        double topAisleY = determineAisleY(0, 0, first);
+        double bottomAisleY = determineAisleY(rows - 1, 0, first);
+
+        Path redRoadNetwork = new Path();
+        redRoadNetwork.setStroke(Color.web("#39FF14"));
+        redRoadNetwork.setStrokeWidth(2.0);
+        redRoadNetwork.setOpacity(1);
+
+        //draw the main vertical spine lines
+        redRoadNetwork.getElements().addAll(
+                new MoveTo(leftX, topAisleY),
+                new LineTo(leftX, bottomAisleY),
+                new MoveTo(rightX, topAisleY),
+                new LineTo(rightX, bottomAisleY)
+        );
+
+        //adds the top gate tail (for every floor)
+        Bounds topGate = spotUI[floorIndex][cols-1][0].getBoundsInParent();
+        double extensionOffsets = topGate.getHeight() - 30; //Adjust this value to match your spacing
+        redRoadNetwork.getElements().addAll(
+                new MoveTo(rightX, topAisleY),
+                new LineTo(rightX, topAisleY - extensionOffsets)
+        );
+
+        double extension = first.getHeight() * (1.0 - (30.0 / first.getHeight()));
+        double rampEndPointX = last.getMaxX() - (first.getWidth() * 0.5); //this is where dots disappear to go up a floor
+
+        if(floorIndex == 0){ //indicates if its 1st floor
+
+            if(Config.rows % 2 == 1){
+
+                Bounds bottomGate = spotUI[floorIndex][0][rows-1].getBoundsInParent(); //adds the bottom gate tail
+                double extensionOffset = bottomGate.getHeight() + 32; // Adjust this value to match your spacing
+                redRoadNetwork.getElements().addAll(
+                        new MoveTo(leftX, bottomAisleY),
+                        new LineTo(leftX, bottomAisleY + extensionOffset)
+                );
+
+                redRoadNetwork.getElements().addAll( //adds the ramp
+                        new MoveTo(leftX, topAisleY), //start at the current top spine point
+                        new LineTo(leftX, topAisleY - extension), //draw the vertical extension upward
+                        new LineTo(rampEndPointX, topAisleY - extension) //trace horizontally from the spine to the rampEndPointX
+                );
+
+            } else { //if its even
+                //adds the bottom gate tail
+                Bounds bottomGate = spotUI[floorIndex][0][rows-1].getBoundsInParent();
+                double extensionOffset = bottomGate.getHeight() - 50; // Adjust this value to match your spacing
+                redRoadNetwork.getElements().addAll(
+                        new MoveTo(leftX, bottomAisleY),
+                        new LineTo(leftX, bottomAisleY + extensionOffset)
+                );
+
+                redRoadNetwork.getElements().addAll( //adds the ramp
+                        new MoveTo(leftX, topAisleY), //start at the current top spine point
+                        new LineTo(leftX, topAisleY - extension), //draw the vertical extension upward
+                        new LineTo(rampEndPointX, topAisleY - extension) //trace horizontally from the spine to the rampEndPointX
+                );
+            }
+
+        } else if(floorIndex < Config.floors-1) { //indicates if its any floor between first and last floor
+
+            redRoadNetwork.getElements().addAll( //adds the ramp
+                    new MoveTo(leftX, topAisleY), //start at the current top spine point
+                    new LineTo(leftX, topAisleY - extension), //draw the vertical extension upward
+                    new LineTo(rampEndPointX, topAisleY - extension) //trace horizontally from the spine to the rampEndPointX
+            );
+
+        } //if it's the last floor don't include the ramp
+
+        for (int r = 0; r < rows; r++) { //draw Aisles and Vertical Connectors to each cell
+            double aisleY = determineAisleY(r, 0, first);
+            redRoadNetwork.getElements().addAll(new MoveTo(leftX, aisleY), new LineTo(rightX, aisleY));
+
+            for (int c = 0; c < cols; c++) {
+                Bounds spot = spotUI[floorIndex][c][r].getBoundsInParent();
+                double centerX = spot.getMinX() + (spot.getWidth() / 2);
+                redRoadNetwork.getElements().addAll(
+                        new MoveTo(centerX, aisleY),
+                        new LineTo(centerX, spot.getMinY() + (spot.getHeight()/2))
+                );
+            }
+        }
+        currentOverlay.getChildren().add(redRoadNetwork);
     }
 
     //VEHICLE ARRIVAL & PATH ROUTING SIMULATION
@@ -196,10 +303,10 @@ public class ParkingLot {
 
         double leftLaneX = firstCellBounds.getMinX() - (firstCellBounds.getWidth() * 0.5);
         double rightLaneX = lastCellBounds.getMaxX() + (firstCellBounds.getWidth() * 0.5);
-        double bottomRoadY = lastCellBounds.getMaxY() + (firstCellBounds.getHeight() * 0.3);
+        double bottomRoadY = lastCellBounds.getMaxY() + (firstCellBounds.getHeight() * 0.4); //this used to be 0.3
 
-        double switchbackUpperY = firstCellBounds.getMinY() - (firstCellBounds.getHeight() * 0.8);
-        double switchbackLowerY = firstCellBounds.getMinY() - (firstCellBounds.getHeight() * 0.4);
+        double switchbackUpperY = firstCellBounds.getMinY() - (firstCellBounds.getHeight() * 0.815); //this used to be 0.8
+        double switchbackLowerY = determineAisleY(0,0, firstCellBounds);
         double rampEndPointX = lastCellBounds.getMaxX() - (firstCellBounds.getWidth() * 0.5);
 
         boolean assignedToBottomLeft = useBottomLeftGateNext;
@@ -264,11 +371,11 @@ public class ParkingLot {
     private void assignVehicleColor(Circle dot, int targetFloor, Boolean c) {
         if(c){
             switch (targetFloor) {
-                case 0 -> dot.setFill(Color.web("#FFD700")); //Yellow
-                case 1 -> dot.setFill(Color.web("#9370DB")); //Purple
-                case 2 -> dot.setFill(Color.web("#00FFFF")); //Aqua
-                case 3 -> dot.setFill(Color.web("#FF0000")); //Red
-                default -> dot.setFill(Color.web("#800080")); //Dark Purple
+                case 0 -> dot.setFill(Color.web("#FFD700"));
+                case 1 -> dot.setFill(Color.web("#9370DB"));
+                case 2 -> dot.setFill(Color.web("#00FFFF"));
+                case 3 -> dot.setFill(Color.web("#FF0000"));
+                default -> dot.setFill(Color.web("#800080"));
             }
         }
     }
@@ -312,8 +419,6 @@ public class ParkingLot {
         }
     }
 
-
-
     //PARKING STAY STATE STAY & SEQUENTIAL DESCENT SYSTEM
     private void finalizeArrivalState(Vehicle v, int finalFloor, int finalCol, int finalRow, RandomizeDuration p, ParkRate rate, double cellCenterX, double cellCenterY, double finalAisleY, double leftLaneX, double rightLaneX, double switchbackUpperY, double switchbackLowerY, double bottomRoadY, boolean finalGateChoice) {
         currentOccupancy.set(currentOccupancy.get() + 1);
@@ -325,7 +430,6 @@ public class ParkingLot {
 
         final double calculatedStayDuration = p.getRandomizeDuration();
 
-        //pass our locked-in duration to the JavaFX PauseTransition timer
         PauseTransition stayTimer = new PauseTransition(Duration.seconds(calculatedStayDuration));
         stayTimer.setOnFinished(stayEvent -> {
             occupancy[finalFloor][finalCol][finalRow] = null;
@@ -383,26 +487,38 @@ public class ParkingLot {
 
         double cLeftX   = curBounds.getMinX() - (w * 0.5);
         double cRightX  = curLast.getMaxX() + (w * 0.5);
-        double cUpperY  = curBounds.getMinY() - (h * 0.8);
-        double cLowerY  = curBounds.getMinY() - (h * 0.4);
+        double cUpperY  = curBounds.getMinY() - (h * 0.815);
+        double cLowerY  = curBounds.getMinY() - (h * 0.275);
         double cExitY   = curLast.getMaxY() + (h * 0.3);
+
+        // BLUE CIRCLE X coordinate (center of the last column)
+        double cRampX = curLast.getMaxX() - (w * 0.5);
 
         Path descentPath = new Path();
         double duration;
 
         if (currentLevel == finalFloor) {
+            //leaving the parking spot
             descentPath.getElements().add(new MoveTo(cRightX, cLowerY));
+            //drive UP the orange spine to exit the floor
             descentPath.getElements().add(new LineTo(cRightX, cUpperY));
             duration = TIME_ORIGIN_EXIT;
+
         } else if (currentLevel > 0) {
-            descentPath.getElements().add(new MoveTo(cRightX, cUpperY));
+            //spawn exactly at the Blue Circle (coming down from the floor above)
+            descentPath.getElements().add(new MoveTo(cRampX, cUpperY));
+            //drive across the top aisle and loop the floor
             descentPath.getElements().add(new LineTo(cLeftX, cUpperY));
             descentPath.getElements().add(new LineTo(cLeftX, cLowerY));
             descentPath.getElements().add(new LineTo(cRightX, cLowerY));
+            //drive UP the orange spine to exit the floor
             descentPath.getElements().add(new LineTo(cRightX, cUpperY));
             duration = TIME_INTERMEDIATE_LOOP;
+
         } else {
-            descentPath.getElements().add(new MoveTo(cRightX, cUpperY));
+            //GROUND FLOOR: spawn exactly at the cRampX
+            descentPath.getElements().add(new MoveTo(cRampX, cUpperY));
+            //drive straight across to the left exit
             descentPath.getElements().add(new LineTo(cLeftX, cUpperY));
             duration = TIME_GROUND_CROSS;
         }
@@ -426,7 +542,6 @@ public class ParkingLot {
         });
         engine.play();
     }
-
 
     //DATA UTILITIES & RESOURCE CLEANUP
     private void completeCleanUp(Vehicle v, int finalFloor, int finalCol, int finalRow, ParkRate rate, double parkingStayDuration) {
@@ -462,17 +577,10 @@ public class ParkingLot {
 
     private double determineAisleY(int targetRow, int targetCol, Bounds firstCellBounds) {
         if (targetRow == 0) {
-            //top Aisle (Above Row 0)
-            //get the absolute top boundary of the row 0 stall
             Bounds row0Bounds = spotUI[0][targetCol][0].getBoundsInParent();
             double row0TopY = row0Bounds.getMinY();
-
-            //instead of dividing cleanly by 2 (which can compress it if the node bounds sit at 0),
-            //we offset it exactly 15 to 20 pixels above the top of the parking stall.
             return row0TopY - 18.0;
-
         } else {
-            //intermediate Driving Aisles
             int rowAbove = (targetRow % 2 == 0) ? targetRow - 1 : targetRow;
             int rowBelow = rowAbove + 1;
 
