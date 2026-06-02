@@ -2,6 +2,7 @@ package com.example.gridlott;
 
 import java.util.Random;
 
+//this class is for generating random durations / checking inputs and used for determining a vehicle's staying duration
 public class RandomizeDuration {
     private final double minDuration;
     private final double maxDuration;

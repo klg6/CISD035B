@@ -2,9 +2,10 @@ package com.example.gridlott;
 
 public class ParkRate {
     private final double fee;
-    private final int perSeconds;
+    private final double perSeconds;
 
-    public ParkRate(double fee, int perSeconds) {
+    //this class is used for calculating fees based on inputs
+    public ParkRate(double fee, double perSeconds) {
         if (fee < 0) {
             throw new IllegalArgumentException("Fee cannot be negative!");
         }

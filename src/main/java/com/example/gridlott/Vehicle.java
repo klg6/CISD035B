@@ -169,7 +169,7 @@ public class Vehicle {
                         "-fx-font-weight: bold; " +
                         "-fx-background-radius: 5; " +
                         "-fx-padding: 10px;" +
-                        "-fx-font-family: 'Courier New';" +
+                        "-fx-font-family: 'Consolas';" +
                         cardStyle
         );
 
