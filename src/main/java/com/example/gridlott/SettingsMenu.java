@@ -25,7 +25,7 @@ public class SettingsMenu extends StackPane {
     private Button applyButton;
     private SettingsCallback callback;
 
-    // --- STYLES FOR VALIDATION ---
+    //STYLES FOR VALIDATION
     private final String NORMAL_STYLE = "-fx-background-color: #111111; -fx-text-fill: #39FF14; -fx-font-weight: bold; -fx-border-color: #333333; -fx-border-radius: 4; -fx-background-radius: 4;";
     private final String ERROR_STYLE = "-fx-background-color: #111111; -fx-text-fill: #39FF14; -fx-font-weight: bold; -fx-border-color: #FF3333; -fx-border-radius: 4; -fx-background-radius: 4;";
 
