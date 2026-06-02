@@ -33,7 +33,7 @@ public class SettingsMenu extends StackPane {
         this.callback = callback;
 
         //fullscreen Blocker: dims background and consume clicks
-        this.setStyle("-fx-background-color: rgba(0, 0, 0, 0.7);");
+        this.setStyle("-fx-background-color: rgba(0, 0, 0, 0.5);");
         this.setOnMouseClicked(e -> e.consume());
         this.setOnScroll(e -> e.consume());
 
@@ -67,16 +67,16 @@ public class SettingsMenu extends StackPane {
         //build setting rows (field, min, max, step amount, isInteger)
         VBox settingsList = new VBox(8);
         settingsList.getChildren().addAll(
-                createSettingRow("Rows", "Number of rows in the grid.", createNumericControl(rowsInput, 1, 50, 1, true)),
-                createSettingRow("Cols", "Number of columns in the grid.", createNumericControl(colsInput, 1, 50, 1, true)),
-                createSettingRow("Floors", "Number of floors to display.", createNumericControl(floorsInput, 1, 25, 1, true)),
-                createSettingRow("Min Duration (s)", "Minimum parking duration.", createNumericControl(minDurInput, 5, 3600, 1, false)),
-                createSettingRow("Max Duration (s)", "Maximum parking duration.", createNumericControl(maxDurInput, 5, 3600, 1, false)),
-                createSettingRow("Min Delay (s)", "Minimum delay between spawns.", createNumericControl(minDelayInput, 0.01, 10, 0.1, false)),
-                createSettingRow("Max Delay (s)", "Maximum delay between spawns.", createNumericControl(maxDelayInput, 0.01, 10, 0.1, false)),
-                createSettingRow("Fee ($)", "Fee per vehicle.", createNumericControl(feeInput, 0.01, 999999999, 1, false)),
-                createSettingRow("Per Seconds", "Revenue is calculated per this interval.", createNumericControl(perSecInput, 0.01, 999999999, 1, false)),
-                createSettingRow("Speed Multiplier", "Dot speed multiplier.", createNumericControl(speedMultiplier, 0.1, 10, 0.1, false))
+                createSettingRow("Rows", "Number of rows in the grid", createNumericControl(rowsInput, 1, 50, 1, true)),
+                createSettingRow("Cols", "Number of columns in the grid", createNumericControl(colsInput, 1, 50, 1, true)),
+                createSettingRow("Floors", "Number of floors to display", createNumericControl(floorsInput, 1, 25, 1, true)),
+                createSettingRow("Min Duration (s)", "Minimum parking duration", createNumericControl(minDurInput, 5, 3600, 1, false)),
+                createSettingRow("Max Duration (s)", "Maximum parking duration", createNumericControl(maxDurInput, 5, 3600, 1, false)),
+                createSettingRow("Min Delay (s)", "Minimum delay between spawns", createNumericControl(minDelayInput, 0.01, 10, 0.1, false)),
+                createSettingRow("Max Delay (s)", "Maximum delay between spawns", createNumericControl(maxDelayInput, 0.01, 10, 0.1, false)),
+                createSettingRow("Fee ($)", "Fee per vehicle", createNumericControl(feeInput, 0.01, 999999999, 1, false)),
+                createSettingRow("Per Seconds", "Revenue is calculated per this interval", createNumericControl(perSecInput, 0.01, 999999999, 1, false)),
+                createSettingRow("Speed Multiplier", "Dot speed multiplier", createNumericControl(speedMultiplier, 0.1, 10, 0.1, false))
         );
 
         //checkboxes
@@ -110,20 +110,34 @@ public class SettingsMenu extends StackPane {
     }
 
     //UI BUILDER HELPERS
-
     private BorderPane createSettingRow(String title, String description, Region control) {
         BorderPane row = new BorderPane();
         row.setStyle("-fx-background-color: #1a1a1a; -fx-border-color: #2a2a2a; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 12;");
 
-        Text square = new Text("■ ");
-        square.setFill(Color.web("#39FF14"));
-        square.setFont(Font.font("System", FontWeight.BOLD, 10));
+        String icon = "■";
+        String lowerTitle = title.toLowerCase();
+
+        if (lowerTitle.contains("row"))             icon = "↕";
+        else if (lowerTitle.contains("col"))        icon = "↔";
+        else if (lowerTitle.contains("floor"))      icon = "▤";
+        else if (lowerTitle.contains("min duration")) icon = "⏱";
+        else if (lowerTitle.contains("max duration")) icon = "⏱";
+        else if (lowerTitle.contains("min delay"))    icon = "📥";
+        else if (lowerTitle.contains("max delay"))    icon = "📥";
+        else if (lowerTitle.contains("fee"))        icon = "💲";
+        else if (lowerTitle.contains("per second"))  icon = "⟳";
+        else if (lowerTitle.contains("speed"))      icon = "⚡";
+
+        Text iconText = new Text(icon + " ");
+        iconText.setFill(Color.web("#39FF14"));
+
+        iconText.setFont(Font.font("Segoe UI", FontWeight.BOLD, 18));
 
         Text titleText = new Text(title);
         titleText.setFill(Color.WHITE);
         titleText.setFont(Font.font("System", FontWeight.BOLD, 13));
 
-        TextFlow titleFlow = new TextFlow(square, titleText);
+        TextFlow titleFlow = new TextFlow(iconText, titleText);
 
         Label descLabel = new Label(description);
         descLabel.setStyle("-fx-text-fill: #888888; -fx-font-size: 11px;");
@@ -303,7 +317,6 @@ public class SettingsMenu extends StackPane {
     }
 
     //LISTENERS (when a user changes settings)
-
     private void attachChangeListeners() {
         rowsInput.textProperty().addListener((o, old, n) -> evaluateModificationState());
         colsInput.textProperty().addListener((o, old, n) -> evaluateModificationState());

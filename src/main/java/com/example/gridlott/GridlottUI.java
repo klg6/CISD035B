@@ -425,7 +425,7 @@ public class GridlottUI extends Application {
         logsCard.setMaxHeight(260);
         VBox.setVgrow(logsCard, Priority.NEVER); //doesn't allow it expands it card or box
 
-        Label logsTitle = new Label("LOGS");
+        Label logsTitle = new Label("VEHICLE LOGS");
         logsTitle.setStyle("-fx-text-fill: #8e8e93; -fx-font-size: 11px; -fx-font-weight: bold; -fx-font-family: 'Segoe UI';");
 
         logContainer = new VBox(5);
