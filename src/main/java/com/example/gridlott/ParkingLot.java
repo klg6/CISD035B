@@ -18,6 +18,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -768,6 +769,14 @@ public class ParkingLot {
 
         //calculates total time spent for the vehicle
         java.time.Duration totalTraverseAndParked = java.time.Duration.between(v.getEntryTime(), v.getExitTime());
+
+        //MIDNIGHT ROLLOVER
+        //if exit time (e.g., 00:00:12) is chronologically behind entry time (e.g., 23:59:25),
+        //java calculates a negative duration in which adding 24 hours perfectly bridges the gap.
+        if (totalTraverseAndParked.isNegative()) {
+            totalTraverseAndParked = totalTraverseAndParked.plusDays(1);
+        }
+
         double t = totalTraverseAndParked.toMillis() / 1000.0;
 
         //this specific window is the vehicle's total traversal time (exiting from and entering to spot)
