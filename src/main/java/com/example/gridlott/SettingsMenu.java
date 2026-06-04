@@ -21,7 +21,7 @@ public class SettingsMenu extends StackPane {
     private TextField rowsInput, colsInput, floorsInput;
     private TextField minDurInput, maxDurInput, minDelayInput, maxDelayInput;
     private TextField feeInput, perSecInput, speedMultiplier;
-    private CheckBox betterVisualsBox, showPathsBox;
+    private CheckBox betterVisualsBox, showPathsBox, showDotGlowBox;
     private Button applyButton;
     private SettingsCallback callback;
 
@@ -67,22 +67,23 @@ public class SettingsMenu extends StackPane {
         //build setting rows (field, min, max, step amount, isInteger)
         VBox settingsList = new VBox(8);
         settingsList.getChildren().addAll(
-                createSettingRow("Rows", "Number of rows in the grid", createNumericControl(rowsInput, 1, 50, 1, true)),
-                createSettingRow("Cols", "Number of columns in the grid", createNumericControl(colsInput, 1, 50, 1, true)),
-                createSettingRow("Floors", "Number of floors to display", createNumericControl(floorsInput, 1, 25, 1, true)),
-                createSettingRow("Min Duration (s)", "Minimum parking duration", createNumericControl(minDurInput, 5, 3600, 1, false)),
-                createSettingRow("Max Duration (s)", "Maximum parking duration", createNumericControl(maxDurInput, 5, 3600, 1, false)),
-                createSettingRow("Min Delay (s)", "Minimum delay between spawns", createNumericControl(minDelayInput, 0.01, 10, 0.1, false)),
-                createSettingRow("Max Delay (s)", "Maximum delay between spawns", createNumericControl(maxDelayInput, 0.01, 10, 0.1, false)),
-                createSettingRow("Fee ($)", "Fee per vehicle", createNumericControl(feeInput, 0.01, 999999999, 1, false)),
-                createSettingRow("Per Seconds", "Revenue is calculated per this interval", createNumericControl(perSecInput, 0.01, 999999999, 1, false)),
-                createSettingRow("Speed Multiplier", "Dot speed multiplier", createNumericControl(speedMultiplier, 0.1, 10, 0.1, false))
+                createSettingRow("Rows", "Number of rows in the grid.", createNumericControl(rowsInput, 1, 50, 1, true)),
+                createSettingRow("Cols", "Number of columns in the grid.", createNumericControl(colsInput, 1, 50, 1, true)),
+                createSettingRow("Floors", "Number of floors to display.", createNumericControl(floorsInput, 1, 25, 1, true)),
+                createSettingRow("Min Duration (s)", "Minimum parking duration.", createNumericControl(minDurInput, 5, 3600, 1, false)),
+                createSettingRow("Max Duration (s)", "Maximum parking duration.", createNumericControl(maxDurInput, 5, 3600, 1, false)),
+                createSettingRow("Min Delay (s)", "Minimum delay between spawns.", createNumericControl(minDelayInput, 0.01, 10, 0.1, false)),
+                createSettingRow("Max Delay (s)", "Maximum delay between spawns.", createNumericControl(maxDelayInput, 0.01, 10, 0.1, false)),
+                createSettingRow("Fee ($)", "Fee per vehicle.", createNumericControl(feeInput, 0.01, 999999999, 1, false)),
+                createSettingRow("Per Seconds", "Revenue is calculated per this interval.", createNumericControl(perSecInput, 0.01, 999999999, 1, false)),
+                createSettingRow("Speed Multiplier", "Dot speed multiplier.", createNumericControl(speedMultiplier, 0.1, 10, 0.1, false))
         );
 
         //checkboxes
-        betterVisualsBox = createCustomCheckBox("Better Dot Visuals", "Enhance the appearance of dots.");
-        showPathsBox = createCustomCheckBox("Show Paths", "Display path connections between dots.");
-        settingsList.getChildren().addAll(betterVisualsBox, showPathsBox);
+        betterVisualsBox = createCustomCheckBox("Better Dot Visuals", "Shows better floor dot visualization.");
+        showPathsBox = createCustomCheckBox("Show Paths", "Displays path connections where dots traverse on.");
+        showDotGlowBox = createCustomCheckBox("Show Dot Glow", "Easily distinguishes which dot is exiting. GPU usage will increase!");
+        settingsList.getChildren().addAll(betterVisualsBox, showPathsBox, showDotGlowBox);
 
         //scrollPane
         ScrollPane scrollPane = new ScrollPane(settingsList);
@@ -330,6 +331,7 @@ public class SettingsMenu extends StackPane {
         speedMultiplier.textProperty().addListener((o, old, n) -> evaluateModificationState());
         betterVisualsBox.selectedProperty().addListener((o, old, n) -> evaluateModificationState());
         showPathsBox.selectedProperty().addListener((o, old, n) -> evaluateModificationState());
+        showDotGlowBox.selectedProperty().addListener((o, old, n) -> evaluateModificationState());
     }
 
     public void refreshMenuState() {
@@ -345,6 +347,7 @@ public class SettingsMenu extends StackPane {
         speedMultiplier.setText(String.valueOf(Config.speedMultiplier));
         betterVisualsBox.setSelected(Config.betterDotVisuals);
         showPathsBox.setSelected(Config.showPaths);
+        showDotGlowBox.setSelected(Config.showDotGlow);
 
         evaluateModificationState();
     }
@@ -383,7 +386,8 @@ public class SettingsMenu extends StackPane {
                         Double.parseDouble(perSecInput.getText()) == Config.perSeconds &&
                         Double.parseDouble(speedMultiplier.getText()) == Config.speedMultiplier &&
                         betterVisualsBox.isSelected() == Config.betterDotVisuals &&
-                        showPathsBox.isSelected() == Config.showPaths;
+                        showPathsBox.isSelected() == Config.showPaths &&
+                        showDotGlowBox.isSelected() == Config.showDotGlow;
 
         //turn apply button green only if they have pending valid changes!
         applyButton.setDisable(valuesUnchanged);
@@ -415,6 +419,7 @@ public class SettingsMenu extends StackPane {
 
             Config.betterDotVisuals = betterVisualsBox.isSelected();
             Config.showPaths = showPathsBox.isSelected();
+            Config.showDotGlow = showDotGlowBox.isSelected();
 
             if (callback != null) callback.onApply();
             refreshMenuState();

@@ -18,6 +18,10 @@ import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -55,6 +59,7 @@ public class GridlottUI extends Application {
     private double anchorX;
     private double anchorY;
 
+    public static int parkingTicketNumber = 1;
     @Override
     public void start(Stage stage) {
         root = new BorderPane();
@@ -217,19 +222,40 @@ public class GridlottUI extends Application {
             }
         });
 
-        stage.setTitle("GRIDLOTT");
+        stage.setTitle("GRIDLOTT: PARKING MANAGEMENT APP");
         stage.setScene(scene);
         stage.show();
     }
 
+    //FILE I/O REBOOT
+    private void initializeDesktopLogFile() {
+        String desktopPath = System.getProperty("user.home") + File.separator + "Desktop" + File.separator + "vehicle_logs.txt";
+        File logFile = new File(desktopPath);
+
+        //ensures the file is completely deleted from your Desktop when you close the app
+        logFile.deleteOnExit();
+
+        //the 'false' parameter overwrites the old file, wiping all previous data for the reboot
+        try (PrintWriter out = new PrintWriter(new FileWriter(logFile, false))) {
+            String rebootTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS).format(timeFormatter);
+            out.println("=== GRIDLOTT REBOOTED @ " + rebootTime + " ===");
+        } catch (IOException e) {
+            System.err.println("Error creating fresh log file: " + e.getMessage());
+        }
+    }
+
+
     //THE CORE ENGINE REBOOT SYSTEM (behaves exactly like a fresh program launch)
     private void rebootEntireSimulationRun() {
-        //instantly stop active arrival spawner loop
-        if (flow != null) flow.stop();
 
-        //kill all active ghost cars in the old lots
+        initializeDesktopLogFile();//wipe the desktop file clean and write a new session header
+
+        parkingTicketNumber = 1;//resets the ticketNumber
+
+        if (flow != null) flow.stop();//instantly stop active arrival spawner loop
+
         if (currentLot != null) {
-            currentLot.stopAllActiveTimers();
+            currentLot.stopAllActiveTimers();//kill all active ghost cars in the old lots
         }
 
         //re-read all configuration properties freshly from the updated Config fields
@@ -276,8 +302,8 @@ public class GridlottUI extends Application {
         flow.setOnFinished(e -> {
             LocalTime realCurrentTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
             Vehicle v = new Vehicle();
-            v.createDotToolTip(realCurrentTime);
-            currentLot.simulateParking(v, rate, stayingDuration);
+            v.createDotToolTip(realCurrentTime, parkingTicketNumber);
+            currentLot.simulateParking(v, rate, stayingDuration, parkingTicketNumber);
             flow.setDuration(Duration.seconds(nextArrivalDelay.getRandomizeDuration()));
             flow.playFromStart();
         });

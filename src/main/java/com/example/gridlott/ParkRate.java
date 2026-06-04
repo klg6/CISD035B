@@ -1,5 +1,7 @@
 package com.example.gridlott;
 
+import java.time.Duration;
+
 public class ParkRate {
     private final double fee;
     private final double perSeconds;
@@ -17,7 +19,8 @@ public class ParkRate {
     }
 
     public double processFeeRate(Vehicle vehicle) {
-        double total = (fee * vehicle.getTotalDuration()) / perSeconds;
+        // (fee * (55 + 5)) / perSeconds
+        double total = (fee * (vehicle.getTotalDuration() + vehicle.getTotalTraversalTime())) / perSeconds;
         return Math.round(total * 100) / 100.0;
     }
 }

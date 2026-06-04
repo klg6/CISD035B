@@ -14,9 +14,15 @@ import javafx.scene.shape.*;
 import javafx.util.Duration;
 
 import java.awt.Point;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+
+import static com.example.gridlott.GridlottUI.parkingTicketNumber;
 
 public class ParkingLot {
     //LAYOUT CONSTANTS
@@ -47,6 +53,7 @@ public class ParkingLot {
 
     //DASHBOARDUI VARIABLES
     private boolean useBottomLeftGateNext = true;
+    private boolean useTopRightExitNext = false;
     private final DoubleProperty totalRevenue = new SimpleDoubleProperty(0.0);
     private final IntegerProperty currentOccupancy = new SimpleIntegerProperty(0);
     private final IntegerProperty totalCars = new SimpleIntegerProperty(0);
@@ -312,7 +319,7 @@ public class ParkingLot {
     //==================================================================================================================
 
     //VEHICLE ARRIVAL & PATH ROUTING SIMULATION=========================================================================
-    public void simulateParking(Vehicle v, ParkRate rate, RandomizeDuration p) {
+    public void simulateParking(Vehicle v, ParkRate rate, RandomizeDuration p, int ticketNumber) {
         FloorPoint target = checkMultiFloorTarget();
         if (target == null) return;
 
@@ -320,6 +327,8 @@ public class ParkingLot {
         int targetCol = target.x();
         int targetRow = target.y();
 
+        v.setTicketNumber(ticketNumber);
+        parkingTicketNumber++; //increment GridLott var for upcoming vehicles
         occupancy[targetFloor][targetCol][targetRow] = v;
 
         Bounds targetStallBounds = spotUI[0][targetCol][targetRow].getBoundsInParent();
@@ -478,7 +487,7 @@ public class ParkingLot {
 
             PathTransition arrivalEngine = new PathTransition(Duration.seconds(2.5 / Config.speedMultiplier), arrivalPath, dot);
 
-            activeAnimations.add(arrivalEngine); //TRACK CLIMB ARRIVAL ANIMATION ---
+            activeAnimations.add(arrivalEngine); //TRACK CLIMB ARRIVAL ANIMATION
 
             arrivalEngine.setOnFinished(ev -> {
                 activeAnimations.remove(arrivalEngine);
@@ -504,55 +513,69 @@ public class ParkingLot {
 
         final double calculatedStayDuration = p.getRandomizeDuration();
 
-        PauseTransition stayTimer = new PauseTransition(Duration.seconds(calculatedStayDuration));
+        v.calculateWaitTimes(calculatedStayDuration);
 
+        PauseTransition stayTimer = new PauseTransition(Duration.seconds(v.getInitialWait()));
         activeAnimations.add(stayTimer); //TRACK PARKED STAY TIMER
 
         stayTimer.setOnFinished(stayEvent -> {
             activeAnimations.remove(stayTimer);
 
-            occupancy[finalFloor][finalCol][finalRow] = null;
-            currentOccupancy.set(currentOccupancy.get() - 1);
-
-            Path stallExitPath = new Path();
-            stallExitPath.getElements().add(new MoveTo(cellCenterX, cellCenterY));
-
-            if (rampsEnabled && finalFloor > 0) {
-                stallExitPath.getElements().add(new LineTo(cellCenterX, finalAisleY));
-                stallExitPath.getElements().add(new LineTo(rightLaneX, finalAisleY));
-                stallExitPath.getElements().add(new LineTo(rightLaneX, switchbackLowerY));
-            } else {
-                if (finalGateChoice) {
-                    stallExitPath.getElements().add(new LineTo(cellCenterX, finalAisleY));
-                    stallExitPath.getElements().add(new LineTo(leftLaneX, finalAisleY));
-                    stallExitPath.getElements().add(new LineTo(leftLaneX, bottomRoadY));
-                } else {
-                    if (finalRow == 0) {
-                        stallExitPath.getElements().add(new LineTo(cellCenterX, switchbackLowerY));
-                        stallExitPath.getElements().add(new LineTo(rightLaneX, switchbackLowerY));
-                    } else {
-                        stallExitPath.getElements().add(new LineTo(cellCenterX, finalAisleY));
-                        stallExitPath.getElements().add(new LineTo(rightLaneX, finalAisleY));
-                        stallExitPath.getElements().add(new LineTo(rightLaneX, switchbackLowerY));
-                    }
-                }
+            if(Config.showDotGlow){
+                v.triggerExitPulse(); //trigger pulse effect (this means this vehicle is about to exit)
             }
 
-            PathTransition exitEngine = new PathTransition(Duration.seconds(2.0 / Config.speedMultiplier), stallExitPath, dot);
+            //start the final 2-second countdown buffer
+            PauseTransition exitBuffer = new PauseTransition(Duration.seconds(v.getWarningTime()));
+            activeAnimations.add(exitBuffer);
 
-            activeAnimations.add(exitEngine); //TRACK STALL EXIT ANIMATION
+            exitBuffer.setOnFinished(exBufferEvent -> {
+                activeAnimations.remove(exitBuffer);
 
-            exitEngine.setOnFinished(ex -> {
-                activeAnimations.remove(exitEngine);
+                occupancy[finalFloor][finalCol][finalRow] = null;
+                currentOccupancy.set(currentOccupancy.get() - 1);
 
-                if (finalFloor > 0 && rampsEnabled) {
-                    chainDownwardRampDescent(dot, finalFloor, bottomRoadY, leftLaneX, rightLaneX, switchbackUpperY,
-                            switchbackLowerY, v, finalFloor, finalCol, finalRow, rate, calculatedStayDuration, finalGateChoice);
+                Path stallExitPath = new Path();
+                stallExitPath.getElements().add(new MoveTo(cellCenterX, cellCenterY));
+
+                if (rampsEnabled && finalFloor > 0) {
+                    stallExitPath.getElements().add(new LineTo(cellCenterX, finalAisleY));
+                    stallExitPath.getElements().add(new LineTo(rightLaneX, finalAisleY));
+                    stallExitPath.getElements().add(new LineTo(rightLaneX, switchbackLowerY));
                 } else {
-                    completeCleanUp(v, finalFloor, finalCol, finalRow, rate, calculatedStayDuration);
+                    if (finalGateChoice) {
+                        stallExitPath.getElements().add(new LineTo(cellCenterX, finalAisleY));
+                        stallExitPath.getElements().add(new LineTo(leftLaneX, finalAisleY));
+                        stallExitPath.getElements().add(new LineTo(leftLaneX, bottomRoadY));
+                    } else {
+                        if (finalRow == 0) {
+                            stallExitPath.getElements().add(new LineTo(cellCenterX, switchbackLowerY));
+                            stallExitPath.getElements().add(new LineTo(rightLaneX, switchbackLowerY));
+                        } else {
+                            stallExitPath.getElements().add(new LineTo(cellCenterX, finalAisleY));
+                            stallExitPath.getElements().add(new LineTo(rightLaneX, finalAisleY));
+                            stallExitPath.getElements().add(new LineTo(rightLaneX, switchbackLowerY));
+                        }
+                    }
                 }
+
+                PathTransition exitEngine = new PathTransition(Duration.seconds(2.0 / Config.speedMultiplier), stallExitPath, dot);
+
+                activeAnimations.add(exitEngine); //TRACK STALL EXIT ANIMATION
+
+                exitEngine.setOnFinished(ex -> {
+                    activeAnimations.remove(exitEngine);
+
+                    if (finalFloor > 0 && rampsEnabled) {
+                        chainDownwardRampDescent(dot, finalFloor, bottomRoadY, leftLaneX, rightLaneX, switchbackUpperY,
+                                switchbackLowerY, v, finalFloor, finalCol, finalRow, rate, calculatedStayDuration, finalGateChoice);
+                    } else {
+                        completeCleanUp(v, finalFloor, finalCol, finalRow, rate, calculatedStayDuration);
+                    }
+                });
+                exitEngine.play();
             });
-            exitEngine.play();
+            exitBuffer.play();
         });
         stayTimer.play();
     }
@@ -596,9 +619,33 @@ public class ParkingLot {
             duration = TIME_INTERMEDIATE_LOOP;
 
         } else {
-            descentPath.getElements().add(new MoveTo(cRampX, cUpperY)); //GROUND FLOOR: spawn exactly at the ramp tail
-            descentPath.getElements().add(new LineTo(cLeftX, cUpperY));  //drive straight across to the left exit
-            duration = TIME_GROUND_CROSS;
+            //alternate the gates (better exiting distribution)
+            boolean exitTopRight = useTopRightExitNext;
+            useTopRightExitNext = !useTopRightExitNext;
+
+            //save the decision inside the dot so the final exit path knows which way to go
+            dot.getProperties().put("exitTopRight", exitTopRight);
+
+            descentPath.getElements().add(new MoveTo(cRampX, cUpperY));
+
+            if (exitTopRight) {
+                //THE LOOP PATH: force cars to traverse the floor before exiting top right
+                descentPath.getElements().add(new LineTo(cLeftX, cUpperY));  //drive left across the top lane
+
+                //U-TURN LOOP
+                descentPath.getElements().add(new LineTo(cLeftX, cLowerY));  //drop down to the second lane
+                descentPath.getElements().add(new LineTo(cRightX, cLowerY)); //drive right across the second lane
+
+                descentPath.getElements().add(new LineTo(cRightX, cUpperY)); // Drive back up to the top-right exit gate
+
+                // Use the loop duration so they don't travel at warp speed
+                duration = TIME_INTERMEDIATE_LOOP;
+                // Note: If you use the full perimeter loop above, you may want to do (TIME_INTERMEDIATE_LOOP * 2) here!
+
+            } else {
+                descentPath.getElements().add(new LineTo(cLeftX, cUpperY));  // Drive left to eventually exit bottom-left
+                duration = TIME_GROUND_CROSS;
+            }
         }
 
         PathTransition engine = new PathTransition(Duration.seconds(duration / Config.speedMultiplier), descentPath, dot);
@@ -615,9 +662,17 @@ public class ParkingLot {
                 chainDownwardRampDescent(dot, nextLevel, bottomRoadY, leftLaneX, rightLaneX, switchbackUpperY,
                         switchbackLowerY, v, finalFloor, finalCol, finalRow, rate, parkingStayDuration, finalGateChoice);
             } else {
+                //retrieve the toggle decision we saved earlier
+                boolean exitTopRight = (boolean) dot.getProperties().getOrDefault("exitTopRight", false);
                 Path groundExitPath = new Path();
-                groundExitPath.getElements().add(new MoveTo(cLeftX, cUpperY));
-                groundExitPath.getElements().add(new LineTo(cLeftX, cExitY));
+
+                if (exitTopRight) {
+                    groundExitPath.getElements().add(new MoveTo(cRightX, cUpperY));
+                    groundExitPath.getElements().add(new LineTo(cRightX, cUpperY)); //drive off top right gate
+                } else {
+                    groundExitPath.getElements().add(new MoveTo(cLeftX, cUpperY));
+                    groundExitPath.getElements().add(new LineTo(cLeftX, cExitY)); //drive off bottom left gate
+                }
 
                 PathTransition finalOutEngine = new PathTransition(Duration.seconds(TIME_LOT_EXIT / Config.speedMultiplier), groundExitPath, dot);
 
@@ -640,14 +695,19 @@ public class ParkingLot {
     private void completeCleanUp(Vehicle v, int finalFloor, int finalCol, int finalRow, ParkRate rate, double parkingStayDuration) {
         Circle dot = v.getDot();
 
-        if (logListener != null) {
+        if(Config.showDotGlow){
+            v.endExitPulse();//turn off glow
+        }
+
+        if(logListener != null) {
             logListener.onLogEvent(dot.getFill(), v.getPlate(), false, finalRow, finalCol, finalFloor);
         }
 
         Tooltip.uninstall(dot, (Tooltip) dot.getProperties().get("tooltip"));
+        dot.getProperties().clear();
         layeredCanvas.getChildren().remove(dot);
 
-        recordVehicleData(v, rate, parkingStayDuration);
+        recordVehicleData(v, rate, parkingStayDuration, finalFloor, finalCol, finalRow);
 
         int zoneWidth = (int) Math.ceil((double) cols / 3);
         int returnZoneId = Math.min(finalCol / zoneWidth, 2);
@@ -700,16 +760,49 @@ public class ParkingLot {
         }
     }
 
-    //records all vehicle data (throughout the life time of the simulation, not the app)
-    private void recordVehicleData(Vehicle v, ParkRate rate, double parkingStayDuration) { //gonna have to use FILE I/O
+    //records all vehicle data (throughout the lifetime of the simulation, not the app)
+    private void recordVehicleData(Vehicle v, ParkRate rate, double parkingStayDuration, int finalFloor, int finalCol, int finalRow) {
+
         v.setTotalDuration(parkingStayDuration);
         v.setExitTime(LocalTime.now());
+
+        //calculates total time spent for the vehicle
+        java.time.Duration totalTraverseAndParked = java.time.Duration.between(v.getEntryTime(), v.getExitTime());
+        double t = totalTraverseAndParked.toMillis() / 1000.0;
+
+        //this specific window is the vehicle's total traversal time (exiting from and entering to spot)
+        double tDuration = t - v.getTotalDuration();
+
+        v.setTotalTraversalTime(tDuration);
         v.setAmountPaid(rate.processFeeRate(v));
         totalRevenue.set(totalRevenue.get() + v.getAmountPaid());
 
-        System.out.printf("\n@%s | Vehicle: %s [%s-%s] left | PAID: $%.2f | STAYED: %.2fs | ENTRY: %s",
-                v.getExitTime().format(logTimeFormatter), v.getPlate(), v.getModel(), v.getType(),
-                v.getAmountPaid(), v.getTotalDuration(), v.getEntryTime().format(logTimeFormatter));
+        String carDetails = String.format("[%s-%s]", v.getModel(), v.getType());
+        String spot = String.format("[%d][%d][%d]", finalRow+1, finalCol+1, finalFloor+1);
+
+        String logEntry = String.format(
+                "EXIT @%s | Vehicle: %-8s %-30s | PAID: $%5.2f | STAYED: %6.2fs at %-12s + TOTAL TRAVERSAL: %6.2fs | ENTRY: %s | TICKET#: %d",
+                v.getExitTime().format(logTimeFormatter),
+                v.getPlate(),
+                carDetails,
+                v.getAmountPaid(),
+                v.getTotalDuration(),
+                spot,
+                v.getTotalTraversalTime(),
+                v.getEntryTime().format(logTimeFormatter),
+                v.getTicketNumber()
+        );
+
+        //DESKTOP PATH & DELETE ON EXIT
+        String desktopPath = System.getProperty("user.home") + File.separator + "Desktop" + File.separator + "vehicle_logs.txt";
+        File logFile = new File(desktopPath);
+        logFile.deleteOnExit();
+
+        try (PrintWriter out = new PrintWriter(new FileWriter(logFile, true))) {
+            out.println(logEntry);
+        } catch (IOException e) {
+            System.err.println("Error writing to log file: " + e.getMessage());
+        }
     }
 
     //==================================================================================================================
@@ -721,7 +814,6 @@ public class ParkingLot {
     public IntegerProperty getTotalCars() { return totalCars; }
     public int getFloorCount() { return floors; }
     public int getMaxCapacity() { return rows * cols * floors; }
-    public List<GridPane> getFloorGrids() { return floorGrids; } //this line is new
 
     //==================================================================================================================
 

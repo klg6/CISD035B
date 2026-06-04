@@ -19,7 +19,12 @@ public class Vehicle {
     private LocalTime entryTime;
     private LocalTime exitTime;
     private double totalDurationParked;
+    private double totalTraversalTime;
     private double amountPaid;
+    private final double WARNING_TIME = 2.0; //the 2-second glow buffer
+    private double initialWait;
+    private int ticketNumber;
+    private javafx.animation.ScaleTransition exitPulseAnimation;
 
     //INNER CLASSES=====================================================================================================
     enum Model {
@@ -104,6 +109,10 @@ public class Vehicle {
     public LocalTime getExitTime() { return exitTime; }
     public double getTotalDuration() { return Math.round(totalDurationParked * 100) / 100.0; }
     public double getAmountPaid() { return amountPaid; }
+    public double getInitialWait() { return initialWait; }
+    public double getWarningTime() { return WARNING_TIME; }
+    public double getTotalTraversalTime(){ return totalTraversalTime; }
+    public int getTicketNumber(){ return ticketNumber; }
     //==================================================================================================================
 
     //SETTERS===========================================================================================================
@@ -111,14 +120,18 @@ public class Vehicle {
     public void setExitTime(LocalTime t){exitTime = t;}
     public void setTotalDuration(double t){totalDurationParked = t;}
     public void setAmountPaid(double money){amountPaid = money;}
+    public void setTotalTraversalTime(double t){totalTraversalTime = t;}
+    public void setTicketNumber(int num){ticketNumber = num;}
+
     //==================================================================================================================
     /*
         This is for the dots on the grid, showing each Vehicle object's (represented as dots) info of:
         model/type/entryTime/plate
     */
-    public void createDotToolTip(LocalTime time) {
+    public void createDotToolTip(LocalTime time, int ticketNum) {
         Paint dynamicColor = generateColor();
         entryTime = time;
+        ticketNumber = ticketNum;
 
         //identify if this vehicle hit has that 0.5% rarity
         boolean isRareMatrix = (dynamicColor instanceof LinearGradient);
@@ -130,12 +143,14 @@ public class Vehicle {
             this.dot.setStrokeWidth(1.5);
         }
 
-        String info = "Plate: " + plate +
+        String info =
+                "Ticket: #" + ticketNumber +
+                "\nPlate: " + plate +
                 "\nType: " + type.toString() +
                 "\nModel: " + model.toString() +
                 "\nEntry time: " + entryTime.toString();
 
-        this.dot.setPickOnBounds(true);
+        this.dot.setPickOnBounds(false);
         Tooltip vehicleTooltip = new Tooltip(info);
         vehicleTooltip.setShowDelay(Duration.millis(100));
 
@@ -176,4 +191,50 @@ public class Vehicle {
         Tooltip.install(this.dot, vehicleTooltip);
         this.dot.getProperties().put("tooltip", vehicleTooltip);
     }
+
+    //VISUAL EFFECT COMPONENTS==========================================================================================
+
+    public void calculateWaitTimes(double totalCalculatedStay) {
+        //calculates how long to wait before triggering the glow warning
+        this.initialWait = Math.max(0.1, totalCalculatedStay - WARNING_TIME);
+    }
+
+    public void triggerExitPulse() { //makes it easy for the user to determine which dot is exiting
+        if (this.dot == null) return;
+
+        javafx.scene.effect.DropShadow glow = new javafx.scene.effect.DropShadow();
+        javafx.scene.paint.Paint fill = this.dot.getFill();
+        glow.setColor(fill instanceof javafx.scene.paint.Color ? (javafx.scene.paint.Color) fill : javafx.scene.paint.Color.WHITE);
+        glow.setRadius(15);
+        glow.setSpread(0.6);
+
+        javafx.scene.effect.InnerShadow core = new javafx.scene.effect.InnerShadow();
+        core.setColor(javafx.scene.paint.Color.WHITE);
+        core.setRadius(8);
+        core.setChoke(0.5);
+
+        glow.setInput(core);
+        this.dot.setEffect(glow);
+
+        //pulses the dot
+        exitPulseAnimation = new javafx.animation.ScaleTransition(javafx.util.Duration.seconds(0.5), this.dot);
+        exitPulseAnimation.setByX(0.2);
+        exitPulseAnimation.setByY(0.2);
+        exitPulseAnimation.setAutoReverse(true);
+        exitPulseAnimation.setCycleCount(2);
+        exitPulseAnimation.play();
+    }
+
+    public void endExitPulse() { //stops the glowing/pulsing animation
+        if (exitPulseAnimation != null) {
+            exitPulseAnimation.stop();
+            exitPulseAnimation = null;
+        }
+        if (this.dot != null) {
+            this.dot.setEffect(null);
+            this.dot.setScaleX(1.0); //reset dot scale
+            this.dot.setScaleY(1.0);
+        }
+    }
+    //==================================================================================================================
 }
