@@ -787,19 +787,20 @@ public class ParkingLot {
         totalRevenue.set(totalRevenue.get() + v.getAmountPaid());
 
         String carDetails = String.format("[%s-%s]", v.getModel(), v.getType());
-        String spot = String.format("[%d][%d][%d]", finalRow+1, finalCol+1, finalFloor+1);
+        String spot = String.format("[%d][%d][%d]", finalFloor+1, finalRow+1, finalCol+1);
 
         String logEntry = String.format(
-                "EXIT @%s | Vehicle: %-8s %-30s | PAID: $%5.2f | STAYED: %6.2fs at %-12s + TOTAL TRAVERSAL: %6.2fs | ENTRY: %s | TICKET#: %d",
-                v.getExitTime().format(logTimeFormatter),
-                v.getPlate(),
-                carDetails,
-                v.getAmountPaid(),
-                v.getTotalDuration(),
-                spot,
-                v.getTotalTraversalTime(),
-                v.getEntryTime().format(logTimeFormatter),
-                v.getTicketNumber()
+                "@%-12s| %-10s | %-31s |     %-3.2fs      |       %-10s       |   ~%-6.2fs     |       +%-6.2fs       |       $%-7.2f      |     %-6s    | %-13s ",
+                v.getExitTime().format(logTimeFormatter), //EXIT TIME
+                v.getPlate(),                             //PLATE
+                carDetails,                               //MODEL/TYPE
+                v.getSpawnTime(),                         //SPAWN TIME
+                spot,                                     //SPOT
+                v.getTotalDuration(),                     //STAYED
+                v.getTotalTraversalTime(),                //TOT. TRAVERSE TIME
+                v.getAmountPaid(),                        //PAID
+                "#" + v.getTicketNumber(),                //TICKET#
+                v.getEntryTime().format(logTimeFormatter) //ENTRY TIME
         );
 
         //DESKTOP PATH & DELETE ON EXIT

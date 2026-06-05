@@ -14,6 +14,7 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
 import javafx.util.Duration;
@@ -222,7 +223,7 @@ public class GridlottUI extends Application {
             }
         });
 
-        stage.setTitle("GRIDLOTT: PARKING MANAGEMENT APP");
+        stage.setTitle("GRIDLOTT: PARKING MANAGEMENT SIMULATION");
         stage.setScene(scene);
         stage.show();
     }
@@ -238,7 +239,9 @@ public class GridlottUI extends Application {
         //the 'false' parameter overwrites the old file, wiping all previous data for the reboot
         try (PrintWriter out = new PrintWriter(new FileWriter(logFile, false))) {
             String rebootTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS).format(timeFormatter);
-            out.println("=== GRIDLOTT REBOOTED @ " + rebootTime + " ===");
+            out.println("=== GRIDLOTT REBOOTED @ " + rebootTime + " ===\n");
+            out.println("EXIT TIME    |   PLATE    |        MODEL/TYPE               |   SPAWN TIME   |   [FLOOR][ROW][COL]    |   " +
+                    "  STAYED     |   TOTAL TRAVERSE     |        PAID         |   TICKET#     | ENTRY TIME   ");
         } catch (IOException e) {
             System.err.println("Error creating fresh log file: " + e.getMessage());
         }
@@ -297,14 +300,22 @@ public class GridlottUI extends Application {
             Platform.runLater(() -> appendLog(dotColor, plate, isEntry, row, col, floor));
         });
 
-        //core block for continuously generating vehicles
-        flow = new PauseTransition(Duration.seconds(0.5));
+        // calculate the delay for the very first car
+        double initialSpawnTime = nextArrivalDelay.getRandomizeDuration();
+        flow = new PauseTransition(Duration.seconds(initialSpawnTime));
+
         flow.setOnFinished(e -> {
             LocalTime realCurrentTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
             Vehicle v = new Vehicle();
+
+            double actualCurrentDelay = flow.getDuration().toSeconds();
+            v.setSpawnTime(actualCurrentDelay);
+
             v.createDotToolTip(realCurrentTime, parkingTicketNumber);
             currentLot.simulateParking(v, rate, stayingDuration, parkingTicketNumber);
-            flow.setDuration(Duration.seconds(nextArrivalDelay.getRandomizeDuration()));
+
+            double nextSpawnTime = nextArrivalDelay.getRandomizeDuration();
+            flow.setDuration(Duration.seconds(nextSpawnTime));
             flow.playFromStart();
         });
         flow.play();
@@ -483,7 +494,7 @@ public class GridlottUI extends Application {
     }
 
     //method dedicated for logs card/box that simply updates whenever a vehicle leaves or enters from a spot
-    private void appendLog(javafx.scene.paint.Paint dotColor, String plate, boolean isEntry, int row, int col, int floor) {
+    private void appendLog(Paint dotColor, String plate, boolean isEntry, int row, int col, int floor) {
         if (logContainer == null) return;
 
         HBox rowBox = new HBox(8);
@@ -491,10 +502,10 @@ public class GridlottUI extends Application {
         Circle dot = new Circle(4, dotColor);
 
         //determine action text and terminal colors
-        String actionText = isEntry ? "going to" : "exited from";
+        String actionText = isEntry ? "->" : "<-";
         String colorHex = isEntry ? "#39FF14" : "#FF3333";
 
-        String text = String.format("(%s) %s [%d][%d][%d]", plate, actionText, row + 1, col + 1, floor + 1);
+        String text = String.format("(%s) %s [%d][%d][%d]", plate, actionText, floor + 1, row + 1, col + 1);
 
         Label logLabel = new Label(text);
         logLabel.setStyle("-fx-font-size: 11px; -fx-font-family: 'Consolas', 'Courier New', monospace; -fx-text-fill: " + colorHex + ";");

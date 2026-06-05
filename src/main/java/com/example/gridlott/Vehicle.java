@@ -23,6 +23,7 @@ public class Vehicle {
     private double amountPaid;
     private final double WARNING_TIME = 2.0; //the 2-second glow buffer
     private double initialWait;
+    private double spawnTime;
     private int ticketNumber;
     private javafx.animation.ScaleTransition exitPulseAnimation;
 
@@ -113,6 +114,7 @@ public class Vehicle {
     public double getWarningTime() { return WARNING_TIME; }
     public double getTotalTraversalTime(){ return totalTraversalTime; }
     public int getTicketNumber(){ return ticketNumber; }
+    public double getSpawnTime(){ return spawnTime; }
     //==================================================================================================================
 
     //SETTERS===========================================================================================================
@@ -122,6 +124,7 @@ public class Vehicle {
     public void setAmountPaid(double money){amountPaid = money;}
     public void setTotalTraversalTime(double t){totalTraversalTime = t;}
     public void setTicketNumber(int num){ticketNumber = num;}
+    public void setSpawnTime(double t){spawnTime = t;}
 
     //==================================================================================================================
     /*
