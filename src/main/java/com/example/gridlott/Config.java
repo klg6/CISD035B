@@ -12,7 +12,7 @@ public class Config{
     public static double perSeconds = 3600;
     public static boolean betterDotVisuals = false;
     public static boolean showPaths = false;
-    public static boolean showDotGlow = false; //makes the user easily tell which vehicles are exiting or entering
+    public static boolean showDotGlow = false; //makes the user easily tell which vehicles are exiting or entering//
     public static double speedMultiplier = 1.0;
 
 

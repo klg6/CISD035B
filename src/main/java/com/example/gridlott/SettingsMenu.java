@@ -394,7 +394,7 @@ public class SettingsMenu extends StackPane {
         applyButton.setOpacity(valuesUnchanged ? 0.5 : 1.0);
     }
 
-    private void applySettings() { //basically lets the user click the apply changes button to confirm changes
+    private void applySettings() {//basically lets the user click the apply changes button to confirm changes
         try {
             double newMinDur = Double.parseDouble(minDurInput.getText());
             double newMaxDur = Double.parseDouble(maxDurInput.getText());

@@ -677,7 +677,7 @@ public class ParkingLot {
 
                 PathTransition finalOutEngine = new PathTransition(Duration.seconds(TIME_LOT_EXIT / Config.speedMultiplier), groundExitPath, dot);
 
-                // --- TRACK FINAL EXIT ANIMATION ---
+                // TRACK FINAL EXIT ANIMATION
                 activeAnimations.add(finalOutEngine);
 
                 finalOutEngine.setOnFinished(eOut -> {

@@ -261,7 +261,7 @@ public class GridlottUI extends Application {
             currentLot.stopAllActiveTimers();//kill all active ghost cars in the old lots
         }
 
-        //re-read all configuration properties freshly from the updated Config fields
+        //reread all configuration properties freshly from the updated Config fields
         stayingDuration = new RandomizeDuration(Config.minDuration, Config.maxDuration);
         nextArrivalDelay = new RandomizeDuration(Config.minDelay, Config.maxDelay);
         rate = new ParkRate(Config.fee, Config.perSeconds);

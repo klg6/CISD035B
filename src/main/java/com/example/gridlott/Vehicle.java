@@ -67,12 +67,11 @@ public class Vehicle {
         return vehicleModels.get(random.nextInt(vehicleModels.size()));
     }
 
-    private Paint generateColor() { // Return type changed to Paint to support Gradients
+    private Paint generateColor() { //return type changed to Paint to support Gradients
         Random rand = new Random();
 
-        //roll a 200-sided die. If it lands on 1, its 0.5% rarity
-        if (rand.nextInt(200) < 1) {
-            //creates a linear gradient spectrum across the dot
+        if (rand.nextInt(200) < 1) {  //its 0.5% rarity 1/200
+
             return new LinearGradient(
                     0, 1, 1, 0, true, CycleMethod.NO_CYCLE,
                     new Stop(0.0, Color.DARKGREEN),
