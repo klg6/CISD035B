@@ -61,6 +61,8 @@ public class GridlottUI extends Application {
     private double anchorY;
 
     public static int parkingTicketNumber = 1;
+
+    private VehicleFinderPanel vehicleFinderPanel;
     @Override
     public void start(Stage stage) {
         root = new BorderPane();
@@ -87,7 +89,7 @@ public class GridlottUI extends Application {
         sp.setStyle(
                 "-fx-background: transparent; -fx-background-color: transparent; " +
                         "-fx-viewport-background-color: transparent; -fx-border-color: #444446; " +
-                        "-fx-border-style: dashed; -fx-border-width: 1.5;"
+                        "-fx-border-style: dashed; -fx-border-width: 1.5; -fx-border-radius: 5;"
         );
         contentBody.setCenter(sp);
         BorderPane.setMargin(sp, new Insets(0, 0, 0, 20));
@@ -97,14 +99,37 @@ public class GridlottUI extends Application {
 
         //SETTINGS MENU
         settingsMenu = new SettingsMenu(() -> {
-            //runs a true clean reset using updated configurations
-            rebootEntireSimulationRun();
-            root.setEffect(null);
-            settingsMenu.setVisible(false);
+            setUIMode(false);//force the UI to a clean state FIRST (remove blurs, restore interaction)
+            settingsMenu.setVisible(false); //hide the menu
+            vehicleFinderPanel.clearInputs(); //clears inputs in vehicle finder panel
+            rebootEntireSimulationRun(); //runs the true clean reset
         });
         settingsMenu.setVisible(false);
 
-        StackPane finalRoot = new StackPane(root, settingsMenu);
+        // Create an AnchorPane instead of a StackPane
+        AnchorPane finalRoot = new AnchorPane();
+
+        // Initialize the panel
+        vehicleFinderPanel = new VehicleFinderPanel(currentLot);
+
+        // Add all components to the AnchorPane
+        finalRoot.getChildren().addAll(root, settingsMenu, vehicleFinderPanel);
+
+        // Anchor your main UI (root) to fill the screen
+        AnchorPane.setTopAnchor(root, 0.0);
+        AnchorPane.setLeftAnchor(root, 0.0);
+        AnchorPane.setRightAnchor(root, 0.0);
+        AnchorPane.setBottomAnchor(root, 0.0);
+
+        // Anchor settingsMenu to fill the screen
+        AnchorPane.setTopAnchor(settingsMenu, 0.0);
+        AnchorPane.setLeftAnchor(settingsMenu, 0.0);
+        AnchorPane.setRightAnchor(settingsMenu, 0.0);
+        AnchorPane.setBottomAnchor(settingsMenu, 0.0);
+
+        // Pin the search panel to the bottom-right corner
+        AnchorPane.setBottomAnchor(vehicleFinderPanel, 30.0);
+        AnchorPane.setRightAnchor(vehicleFinderPanel, 30.0);
 
         //MOUSE & PAN EVENT FILTERS
         viewportFrame.setOnMousePressed(event -> {
@@ -214,11 +239,11 @@ public class GridlottUI extends Application {
             if (event.getCode() == KeyCode.ESCAPE) {
                 if (settingsMenu.isVisible()) {
                     settingsMenu.setVisible(false);
-                    root.setEffect(null);
+                    setUIMode(false); // Helper method handles un-blurring
                 } else {
-                    settingsMenu.refreshMenuState(); //dynamically checks inputs and resets apply button to disabled
+                    settingsMenu.refreshMenuState();
                     settingsMenu.setVisible(true);
-                    root.setEffect(new GaussianBlur(15));
+                    setUIMode(true);  // Helper method handles blurring
                 }
             }
         });
@@ -270,6 +295,11 @@ public class GridlottUI extends Application {
         currentLot = new ParkingLot(Config.rows, Config.cols);
         currentLot.setFloorCount(Config.floors);
         currentLot.generateParkingLot();
+
+        // Give the new lot to the Vehicle Finder!
+        if (vehicleFinderPanel != null) {
+            vehicleFinderPanel.updateParkingLot(currentLot);
+        }
 
         //update the visual viewport container tracking targets
         zoomContainer.getChildren().clear();
@@ -326,24 +356,31 @@ public class GridlottUI extends Application {
         HBox topBar = new HBox(15);
         topBar.setAlignment(Pos.CENTER_LEFT);
 
+        String style = "-fx-background-color: #1e1e1f; -fx-background-radius: 5; -fx-border-color: #2d2d30; -fx-border-width: 1; -fx-padding: 12 24 12 24; -fx-border-radius: 5;";
+
         HBox revCard = createMetricCard("REVENUE", lot.getRevenueProperty(), "$0.00", true);
         HBox occCard = createMetricCard("OCCUPANCY", lot.getOccupancyProperty(), "0 / " + lot.getMaxCapacity(), false);
         HBox carsCard = createMetricCard("TOTAL CAR ENTRIES", lot.getTotalCars(), "0", false);
 
         revCard.setPrefWidth(260);
+        revCard.setStyle(style);
+
         occCard.setPrefWidth(260);
+        occCard.setStyle(style);
+
         carsCard.setPrefWidth(260);
+        carsCard.setStyle(style);
 
         VBox floorTextContainer = new BoxCardTextBuilder("VIEWING FLOOR", "Floor 1");
         floorIndicatorValueLabel = (Label) floorTextContainer.getChildren().get(1);
 
         HBox floorCard = new HBox(floorTextContainer);
-        floorCard.setStyle("-fx-background-color: #1e1e1f; -fx-background-radius: 8; -fx-border-color: #2d2d30; -fx-border-width: 1; -fx-padding: 12 24 12 24;");
+        floorCard.setStyle(style);
         floorCard.setPrefWidth(260);
 
         VBox timeTextContainer = new BoxCardTextBuilder("TIME", LocalTime.now().format(timeFormatter));
         HBox timeCard = new HBox(timeTextContainer);
-        timeCard.setStyle("-fx-background-color: #1e1e1f; -fx-background-radius: 8; -fx-border-color: #2d2d30; -fx-border-width: 1; -fx-padding: 12 24 12 24;");
+        timeCard.setStyle(style);
         timeCard.setPrefWidth(260);
 
         PauseTransition clockTick = new PauseTransition(Duration.seconds(1));
@@ -369,7 +406,7 @@ public class GridlottUI extends Application {
 
         //LEGEND CARD
         VBox legendCard = new VBox(8);
-        legendCard.setStyle("-fx-background-color: #1e1e1f; -fx-background-radius: 8; -fx-border-color: #2d2d30; -fx-border-width: 1; -fx-padding: 12 15 12 15;");
+        legendCard.setStyle("-fx-background-color: #1e1e1f; -fx-background-radius: 5; -fx-border-color: #2d2d30; -fx-border-width: 1; -fx-padding: 12 15 12 15; -fx-border-radius: 5;");
         legendCard.setMinWidth(100);
         legendCard.setPrefWidth(260);
         legendCard.setMaxWidth(260);
@@ -400,7 +437,7 @@ public class GridlottUI extends Application {
 
         //SUMMARY CARD
         VBox summaryCard = new VBox(10);
-        summaryCard.setStyle("-fx-background-color: #1e1e1f; -fx-background-radius: 8; -fx-border-color: #2d2d30; -fx-border-width: 1; -fx-padding: 12 15 12 15;");
+        summaryCard.setStyle("-fx-background-color: #1e1e1f; -fx-background-radius: 5; -fx-border-color: #2d2d30; -fx-border-width: 1; -fx-padding: 12 15 12 15; -fx-border-radius: 5;");
         summaryCard.setMinWidth(100);
         summaryCard.setPrefWidth(260);
         summaryCard.setMaxWidth(260);
@@ -437,7 +474,7 @@ public class GridlottUI extends Application {
 
         //FLOORS CARD
         VBox floorCard = new VBox(8);
-        floorCard.setStyle("-fx-background-color: #1e1e1f; -fx-background-radius: 8; -fx-border-color: #2d2d30; -fx-border-width: 1; -fx-padding: 12 15 12 15;");
+        floorCard.setStyle("-fx-background-color: #1e1e1f; -fx-background-radius: 5; -fx-border-color: #2d2d30; -fx-border-width: 1; -fx-padding: 12 15 12 15; -fx-border-radius: 5;");
         floorCard.setMinWidth(100);
         floorCard.setPrefWidth(260);
         floorCard.setMaxWidth(260);
@@ -453,7 +490,7 @@ public class GridlottUI extends Application {
 
         //LOGS CARD
         VBox logsCard = new VBox(8);
-        logsCard.setStyle("-fx-background-color: #1e1e1f; -fx-background-radius: 8; -fx-border-color: #2d2d30; -fx-border-width: 1; -fx-padding: 12 15 12 15;");
+        logsCard.setStyle("-fx-background-color: #1e1e1f; -fx-background-radius: 5; -fx-border-color: #2d2d30; -fx-border-width: 1; -fx-padding: 12 15 12 15; -fx-border-radius: 5;");
         logsCard.setMinWidth(100);
         logsCard.setPrefWidth(260);
         logsCard.setMaxWidth(260);
@@ -631,6 +668,18 @@ public class GridlottUI extends Application {
             } else {
                 btn.setStyle("-fx-background-color: #2c2c2e; -fx-background-radius: 6; -fx-cursor: hand;");
             }
+        }
+    }
+
+    private void setUIMode(boolean blur) { //FOR PREVENTING BLURRINESS FOR THE VEHICLE FINDER UI PANEL AFTER REBOOTING
+        if (blur) {
+            root.setEffect(new GaussianBlur(15));
+            vehicleFinderPanel.setEffect(new GaussianBlur(15));
+            vehicleFinderPanel.setMouseTransparent(true);
+        } else {
+            root.setEffect(null);
+            vehicleFinderPanel.setEffect(null);
+            vehicleFinderPanel.setMouseTransparent(false);
         }
     }
 

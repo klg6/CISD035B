@@ -26,6 +26,7 @@ public class Vehicle {
     private double spawnTime;
     private int ticketNumber;
     private javafx.animation.ScaleTransition exitPulseAnimation;
+    private Status currentStatus = Status.TRANSITING;
 
     //INNER CLASSES=====================================================================================================
     enum Model {
@@ -37,6 +38,12 @@ public class Vehicle {
     }
 
     enum Type { PICKUP_TRUCK, SUV, COUPE, MOTORCYCLE, VAN, SEDAN, HATCHBACK }
+
+    public enum Status {
+        TRANSITING, //entering lot, moving to cell
+        PARKED,     //in the cell
+        EXITING     //left the cell, moving to exit
+    }
     //==================================================================================================================
 
     //PRIVATE GENERATION FUNCTIONS======================================================================================
@@ -114,6 +121,7 @@ public class Vehicle {
     public double getTotalTraversalTime(){ return totalTraversalTime; }
     public int getTicketNumber(){ return ticketNumber; }
     public double getSpawnTime(){ return spawnTime; }
+    public Status getCurrentStatus() { return currentStatus; }
     //==================================================================================================================
 
     //SETTERS===========================================================================================================
@@ -124,6 +132,7 @@ public class Vehicle {
     public void setTotalTraversalTime(double t){totalTraversalTime = t;}
     public void setTicketNumber(int num){ticketNumber = num;}
     public void setSpawnTime(double t){spawnTime = t;}
+    public void setCurrentStatus(Status currentStatus) {this.currentStatus = currentStatus;}
 
     //==================================================================================================================
     /*
@@ -147,10 +156,10 @@ public class Vehicle {
 
         String info =
                 "Ticket: #" + ticketNumber +
-                "\nPlate: " + plate +
-                "\nType: " + type.toString() +
-                "\nModel: " + model.toString() +
-                "\nEntry time: " + entryTime.toString();
+                        "\nPlate: " + plate +
+                        "\nType: " + type.toString() +
+                        "\nModel: " + model.toString() +
+                        "\nEntry time: " + entryTime.toString();
 
         this.dot.setPickOnBounds(false);
         Tooltip vehicleTooltip = new Tooltip(info);
@@ -168,13 +177,13 @@ public class Vehicle {
 
             cardStyle = "-fx-background-color: rgba(28, 28, 28, 0.75); " +
                     "-fx-border-color: " + hexColor + "; " +
-                    "-fx-border-width: 1px;";
+                    "-fx-border-width: 1px; -fx-border-radius: 5;";
         } else {
             //0.5% rare card ticket ---
             cardStyle = "-fx-background-color: linear-gradient(to bottom right, #001a00, #000000, #052e05); " +
                     "-fx-border-color: linear-gradient(to right, black, #00FF00, #ADFF2F, #7FFF00, black); " +
                     "-fx-border-width: 1px; " +
-                    "-fx-inner-border-color: #00FF00;";
+                    "-fx-inner-border-color: #00FF00; -fx-border-radius: 5;";
 
             this.dot.setStroke(Color.rgb(173, 255, 47, 0.3)); //GREENYELLOW with 30% opacity
             this.dot.setStrokeWidth(3.5);
