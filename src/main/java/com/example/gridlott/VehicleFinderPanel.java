@@ -365,7 +365,7 @@ public class VehicleFinderPanel extends VBox {
 
         row.setStyle(defaultStyle);
 
-        //sisplay the grid coordinate
+        //display the grid coordinate
         Label infoLabel = new Label("[" + (f) + "," + (r) + "," + (c) + "]");
         infoLabel.setStyle("-fx-text-fill: white;");
         row.getChildren().add(infoLabel);
@@ -377,7 +377,7 @@ public class VehicleFinderPanel extends VBox {
         //selection Click Logic
         row.setOnMouseClicked(e -> {
             row.setStyle(hoverStyle); //keep the highlight on click
-            System.out.println("Selected Structural Cell: " + (f+1) + "," + (r+1) + "," + (c+1));
+            System.out.println("Selected Structural Cell: " + (f) + "," + (r) + "," + (c));
         });
 
         return row;

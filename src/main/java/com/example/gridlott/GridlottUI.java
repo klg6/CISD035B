@@ -542,7 +542,7 @@ public class GridlottUI extends Application {
         String actionText = isEntry ? "->" : "<-";
         String colorHex = isEntry ? "#39FF14" : "#FF3333";
 
-        String text = String.format("(%s) %s [%d][%d][%d]", plate, actionText, floor + 1, row + 1, col + 1);
+        String text = String.format("(%s) %s [%d,%d,%d]", plate, actionText, floor + 1, row + 1, col + 1);
 
         Label logLabel = new Label(text);
         logLabel.setStyle("-fx-font-size: 11px; -fx-font-family: 'Consolas', 'Courier New', monospace; -fx-text-fill: " + colorHex + ";");
