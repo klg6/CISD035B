@@ -38,47 +38,46 @@ public class VehicleFinderPanel extends VBox {
 
         this.currentLot = lot;
 
-        // 1. Panel Base Style
+        //panel Base Style
         this.setStyle("-fx-background-color: #1a1a1a; -fx-border-color: #2d2d30; -fx-border-radius: 5; -fx-background-radius: 5;");
         this.setPadding(new Insets(10));
         this.setSpacing(10);
         this.setAlignment(Pos.TOP_LEFT);
 
-        // 2. Header (Icon + Label)
+        //header (Icon + Label)
         HBox header = new HBox(10);
         header.setAlignment(Pos.CENTER_LEFT);
 
-        toggleButton = new Button("\uD83D\uDD0D"); // Magnifying Glass
+        toggleButton = new Button("\uD83D\uDD0D"); //magnifying Glass
         toggleButton.setStyle("-fx-background-color: transparent; -fx-text-fill: #8e8e93; -fx-font-size: 16px; -fx-cursor: hand;");
         toggleButton.setOnAction(e -> togglePanel());
 
         titleLabel = new Label("VEHICLE / CELL FINDER");
         titleLabel.setStyle("-fx-text-fill: #8e8e93; -fx-font-size: 14px; -fx-font-family: 'Segoe UI'; -fx-font-size: 11px; -fx-font-weight: bold;");
-        titleLabel.setVisible(false); // Hidden until expanded
-        titleLabel.setManaged(false); // Hidden until expanded
+        titleLabel.setVisible(false); //hidden until expanded
+        titleLabel.setManaged(false); //also hidden until expanded
 
         header.getChildren().addAll(toggleButton, titleLabel);
 
-        // 1. Create the container for results
+        //create the container for results
         resultsArea = new VBox(5);
         resultsArea.setStyle("-fx-background-color: #1a1a1a;");
 
-        // 2. Wrap it in a ScrollPane so it doesn't overflow the screen
+        //wrap it in a ScrollPane so it doesn't overflow the screen
         scrollPane = new ScrollPane(resultsArea);
         scrollPane.setFitToWidth(true);
         scrollPane.setStyle("-fx-background: #1a1a1a; -fx-background-color: #1a1a1a; -fx-border-color: #333333; -fx-border-radius: 5;");
-        scrollPane.setPrefHeight(350); // Set a default height for the results list
+        scrollPane.setPrefHeight(350); //set a default height for the results list
         scrollPane.setPrefWidth(180);
-        // ---> ADD THESE TWO LINES: Start hidden!
         scrollPane.setVisible(false);
         scrollPane.setManaged(false);
 
-        // 3. Content Area
+        //content Area
         contentArea = new VBox(8);
         contentArea.setVisible(false);
         contentArea.setManaged(false);
 
-        // --- STATUS FILTERS ---
+        //STATUS FILTERS
         HBox filterBar = new HBox(5);
         filterGroup = new ToggleGroup();
 
@@ -89,7 +88,7 @@ public class VehicleFinderPanel extends VBox {
 
         ToggleButton[] buttons = {allBtn, transBtn, parkBtn, exitBtn};
 
-        // 1. Define the themes (Standardized)
+        //status themes
         String base = "-fx-font-size: 10px; -fx-background-radius: 4; -fx-padding: 3 8 3 8; -fx-cursor: hand; ";
         String inactive = base + "-fx-background-color: #333333; -fx-text-fill: #aaaaaa;";
         String styleAll = base + "-fx-background-color: #ffffff; -fx-text-fill: black;";
@@ -97,7 +96,7 @@ public class VehicleFinderPanel extends VBox {
         String stylePark = base + "-fx-background-color: #6c757d; -fx-text-fill: white;"; // Gray
         String styleExit = base + "-fx-background-color: #fd7e14; -fx-text-fill: white;"; // Orange
 
-        // 2. Set initial state and group
+        //set initial state and group
         for (ToggleButton btn : buttons) {
             btn.setToggleGroup(filterGroup);
             btn.setStyle(inactive);
@@ -105,9 +104,9 @@ public class VehicleFinderPanel extends VBox {
         allBtn.setSelected(true);
         allBtn.setStyle(styleAll);
 
-        // 3. Logic + Theme Switcher
+        //logic + theme switcher
         filterGroup.selectedToggleProperty().addListener((obs, oldVal, newVal) -> {
-            // FIX: Prevent accidental deselection
+            //prevents accidental deselection
             if (newVal == null) {
                 oldVal.setSelected(true);
                 return;
@@ -129,14 +128,14 @@ public class VehicleFinderPanel extends VBox {
         filterBar.getChildren().addAll(allBtn, transBtn, parkBtn, exitBtn);
 
         double inputWidth = 180.0;
-        // ComboBox Styling
+        //comboBox Styling
         categoryBox = new ComboBox<>();
         categoryBox.getItems().addAll("Ticket#", "Plate", "Model", "Type", "Entry Time", "Cell");
         categoryBox.setPromptText("Select Category");
         categoryBox.setPrefWidth(inputWidth);
         categoryBox.setStyle("-fx-background-color: #1a1a1a; -fx-text-fill: #39FF14; -fx-border-color: #39FF14; -fx-background-radius: 5; -fx-border-radius: 5;");
 
-        // Dropdown cell styling
+        //dropdown cell styling
         categoryBox.setCellFactory(lv -> new ListCell<String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -150,7 +149,7 @@ public class VehicleFinderPanel extends VBox {
             }
         });
 
-        // Selected item styling
+        //selected item styling
         categoryBox.setButtonCell(new ListCell<String>() {
             @Override
             protected void updateItem(String item, boolean empty) {
@@ -164,67 +163,67 @@ public class VehicleFinderPanel extends VBox {
             }
         });
 
-        // TextField
+        //textField
         searchInput = new TextField();
         searchInput.setPromptText("Enter value...");
         searchInput.setPrefWidth(inputWidth);
         searchInput.setStyle("-fx-background-color: #111111; -fx-text-fill: white; -fx-border-color: #333333; -fx-border-radius: 3;");
 
-        // Button (Start with VIEW ALL)
+        //button (Start with VIEW ALL)
         searchButton = new Button("VIEW ALL");
         searchButton.setStyle("-fx-background-color: #FF00FF; -fx-text-fill: black; -fx-cursor: hand; -fx-font-family: 'Segoe UI'; -fx-font-size: 11px; -fx-font-weight: bold;");
         searchButton.setMaxWidth(Double.MAX_VALUE);
         searchButton.setOnAction(e -> {
-            // ---> ADD THIS: Reveal the results area when they hit the button!
+            //reveal the results area when they hit the search or view all button
             scrollPane.setVisible(true);
             scrollPane.setManaged(true);
 
             handleSearchAction();
         });
 
-        // --- SMART LISTENERS ---
+        //SMART LISTENERS
         categoryBox.valueProperty().addListener((obs, oldVal, newVal) -> {
             boolean isCell = "Cell".equals(newVal);
 
-            // Hide/Show filters based on mode
+            //hide/show filters based on mode
             filterBar.setVisible(!isCell);
             filterBar.setManaged(!isCell);
 
-            // --- SMART VISIBILITY MEMORY ---
+            //SMART VISIBILITY MEMORY
             String currentText = searchInput.getText().trim();
             if (newVal != null && newVal.equals(lastSearchedCategory) && currentText.equalsIgnoreCase(lastSearchedQuery)) {
-                // If they switch back to their active search, instantly reveal the live results!
+                //if they switch back to their active search, instantly reveal the live results
                 scrollPane.setVisible(true);
                 scrollPane.setManaged(true);
                 executeSearch(lastSearchedCategory, lastSearchedQuery);
             } else {
-                // If they switch to an unsearched category, hide the old results so they aren't confusing
+                //if they switch to an unsearched category, hide the old results so they aren't confusing to reference data
                 scrollPane.setVisible(false);
                 scrollPane.setManaged(false);
                 resultsArea.getChildren().clear();
             }
 
-            // Re-check state so the button updates immediately when switching categories
+            //re-check state so the button updates immediately when switching categories
             checkButtonState();
         });
 
-        // --- THE "REBOOT" LOGIC ---
-        // 4. DISABLE BINDINGS (Logic: Gray out until category selected)
+        //REBOOT
+        //disables bindings; gray out until category selected
         BooleanBinding isNoCategorySelected = categoryBox.valueProperty().isNull();
         allBtn.disableProperty().bind(isNoCategorySelected);
         transBtn.disableProperty().bind(isNoCategorySelected);
         parkBtn.disableProperty().bind(isNoCategorySelected);
         exitBtn.disableProperty().bind(isNoCategorySelected);
 
-        // Let checkButtonState() handle the search button manually
+        //lets checkButtonState() handle the search button manually
         searchButton.setDisable(true);
 
-        // 5. SEARCH INPUT LISTENER (Logic: Switch VIEW ALL vs SEARCH)
+        //SEARCH INPUT LISTENER; switch VIEW ALL vs SEARCH button
         searchInput.textProperty().addListener((obs, oldVal, newVal) -> {
             boolean isEmpty = (newVal == null || newVal.trim().isEmpty());
             if (isEmpty) {
                 searchButton.setText("VIEW ALL");
-                // Change color immediately as long as it's not currently disabled
+                //change color immediately as long as it's not currently disabled
                 if (!searchButton.isDisabled()) {
                     searchButton.setStyle("-fx-background-color: #FF00FF; -fx-text-fill: black; -fx-cursor: hand; -fx-font-family: 'Segoe UI'; -fx-font-size: 11px; -fx-font-weight: bold;");
                 }
@@ -237,7 +236,7 @@ public class VehicleFinderPanel extends VBox {
             checkButtonState();
         });
 
-        // Visual styling when Disabled vs Enabled
+        //visual styling when disabled vs enabled
         searchButton.disabledProperty().addListener((obs, wasDisabled, isDisabled) -> {
             if (isDisabled) {
                 searchButton.setStyle("-fx-background-color: #333333; -fx-text-fill: #888888; -fx-font-weight: bold; -fx-font-family: 'Segoe UI'; -fx-font-size: 11px;");
@@ -249,7 +248,7 @@ public class VehicleFinderPanel extends VBox {
             }
         });
 
-        // BACKGROUND POLLING ENGINE: Refreshes the active search every 1 second
+        //BACKGROUND POLLING ENGINE; refreshes the active search every half a second
         refreshTimeline = new javafx.animation.Timeline(new javafx.animation.KeyFrame(
                 Duration.seconds(perSecondRefresher),
                 e -> {
@@ -257,8 +256,7 @@ public class VehicleFinderPanel extends VBox {
                         return;
                     }
 
-                    // --- MATCH GUARD ---
-                    // Only run background refreshes if the user is looking at the active search category!
+                    //only run background refreshes if the user is looking at the active search category
                     if (lastSearchedCategory != null && lastSearchedCategory.equals(categoryBox.getValue())) {
                         executeSearch(lastSearchedCategory, lastSearchedQuery);
                     }
@@ -267,11 +265,10 @@ public class VehicleFinderPanel extends VBox {
         refreshTimeline.setCycleCount(javafx.animation.Timeline.INDEFINITE);
         refreshTimeline.play();
 
-        // 6. ASSEMBLE UI (THE FIX THAT STOPS THE POPPING)
-        // Put EVERYTHING inside contentArea, including the scrollPane
+        //ASSEMBLE UI (fixes vehicle finder panel automatically popping)
         contentArea.getChildren().addAll(scrollPane, filterBar, categoryBox, searchInput, searchButton);
 
-        // Put ONLY the header and contentArea inside the root panel
+        //ONLY the header and contentArea inside the root panel
         this.getChildren().addAll(header, contentArea);
     }
 
@@ -279,11 +276,11 @@ public class VehicleFinderPanel extends VBox {
 
         isExpanded = !isExpanded;
 
-        // Toggle content visibility
+        //toggle content visibility
         contentArea.setVisible(isExpanded);
         contentArea.setManaged(isExpanded);
 
-        // Toggle title visibility
+        //toggle title visibility
         titleLabel.setVisible(isExpanded);
         titleLabel.setManaged(isExpanded);
 
@@ -297,29 +294,27 @@ public class VehicleFinderPanel extends VBox {
     }
 
     public void clearInputs() {
-        // Reset the dropdown
+        //reset the dropdown
         categoryBox.getSelectionModel().clearSelection();
         categoryBox.setPromptText("Select Category");
 
-        // Clear the text field
+        //clear the text field
         searchInput.clear();
         searchInput.setPromptText("Enter value...");
     }
 
-    // This is the action attached to your Search Button
     private void handleSearchAction() {
         String currentCat = categoryBox.getValue();
         String currentText = searchInput.getText().trim();
 
-        // 1. Perform the search immediately
+        //perform the search immediately
         executeSearch(currentCat, currentText);
 
-        // 2. Set the "Active" state so the timeline knows what to keep alive
+        //set the "Active" state so the timeline knows what to keep alive
         lastSearchedCategory = currentCat;
         lastSearchedQuery = currentText;
 
-        // 3. Refresh button state so it disables/grays out to prevent
-        //    the user from re-clicking while the live refresh is working.
+        //refresh button state so it disables/grays out to prevent the user from re-clicking while the live refresh is working.
         checkButtonState();
     }
 
@@ -328,11 +323,9 @@ public class VehicleFinderPanel extends VBox {
         resultsArea.getChildren().clear();
 
         if ("Cell".equals(category)) {
-            // --- STRUCTURAL SNAPSHOT MODE (No vehicles referenced) ---
-            renderCellStructure(query);
+            renderCellStructure(query); //(No vehicles referenced)
         } else {
-            // --- STANDARD VEHICLE SEARCH (Existing Logic) ---
-            renderVehicleSearch(category, query);
+            renderVehicleSearch(category, query); //standard vehicle search for other remaining categories
         }
     }
 
@@ -343,7 +336,7 @@ public class VehicleFinderPanel extends VBox {
         String lowerQuery = (query == null) ? "" : query.toLowerCase().trim();
 
         for (int f = 0; f < floors; f++) {
-            // Floor Header
+            //floor header
             Label floorHeader = new Label(" FLOOR " + (f + 1));
             floorHeader.setStyle("-fx-text-fill: #39FF14; -fx-font-weight: bold; -fx-padding: 10 0 5 0;");
             resultsArea.getChildren().add(floorHeader);
@@ -352,40 +345,38 @@ public class VehicleFinderPanel extends VBox {
                 for (int c = 0; c < cols; c++) {
                     String coord = (f + 1) + "," + (r + 1) + "," + (c + 1);
 
-                    // Filter logic
+                    //filter logic
                     if (!lowerQuery.isEmpty() && !coord.contains(lowerQuery)) continue;
 
-                    // Create the row that handles the hover/click behavior
+                    //create the row that handles the hover/click behavior
                     resultsArea.getChildren().add(buildSelectableCellRow(f + 1, r + 1, c + 1));
                 }
             }
         }
     }
 
-    private HBox buildSelectableCellRow(int f, int r, int c) {
+    private HBox buildSelectableCellRow(int f, int r, int c) { //similar to buildResultRow but for cell category
         HBox row = new HBox(10);
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(5));
 
-        // 1. EXACTLY matching your standard row style
         String defaultStyle = "-fx-background-color: #222222; -fx-background-radius: 3; -fx-border-color: #333333; -fx-border-radius: 3; -fx-cursor: hand;";
         String hoverStyle = "-fx-background-color: #333333; -fx-background-radius: 3; -fx-border-color: #39FF14; -fx-border-radius: 3; -fx-cursor: hand;";
 
         row.setStyle(defaultStyle);
 
-        // 2. Display the Coordinate (Matches your Label styling)
+        //sisplay the grid coordinate
         Label infoLabel = new Label("[" + (f) + "," + (r) + "," + (c) + "]");
         infoLabel.setStyle("-fx-text-fill: white;");
         row.getChildren().add(infoLabel);
 
-        // 3. Hover effects (Copy-pasted from your provided buildResultRow)
+        //hover effects
         row.setOnMouseEntered(e -> row.setStyle(hoverStyle));
         row.setOnMouseExited(e -> row.setStyle(defaultStyle));
 
-        // 4. Selection Click Logic
+        //selection Click Logic
         row.setOnMouseClicked(e -> {
-            // Keep the highlight on click
-            row.setStyle(hoverStyle);
+            row.setStyle(hoverStyle); //keep the highlight on click
             System.out.println("Selected Structural Cell: " + (f+1) + "," + (r+1) + "," + (c+1));
         });
 
@@ -401,17 +392,17 @@ public class VehicleFinderPanel extends VBox {
         String lowerQuery = (query == null) ? "" : query.toLowerCase().trim();
         boolean isBrowseMode = lowerQuery.isEmpty();
 
-        // 1. Filter the matches
+        //filter the matches
         for (Vehicle car : parkedCars) {
 
-            // --- ONLY APPLY STATUS FILTER IF NOT IN CELL MODE ---
+            //ONLY APPLY STATUS FILTER IF NOT IN CELL MODE
             if (!"Cell".equals(category) && !"All".equals(currentFilter)) {
                 if (currentFilter.equals("Entering") && car.getCurrentStatus() != Vehicle.Status.TRANSITING) continue;
                 if (currentFilter.equals("Parked") && car.getCurrentStatus() != Vehicle.Status.PARKED) continue;
                 if (currentFilter.equals("Exiting") && car.getCurrentStatus() != Vehicle.Status.EXITING) continue;
             }
 
-            // --- SEARCH/BROWSE LOGIC ---
+            //SEARCH/BROWSE
             if (isBrowseMode) {
                 matches.add(car);
             } else {
@@ -422,20 +413,20 @@ public class VehicleFinderPanel extends VBox {
             }
         }
 
-        // 2. Sort the matches (The "Relevance" Engine)
+        //sort the matches depending on search query
         matches.sort((v1, v2) -> {
             String s1 = getSortableValue(v1, category).toLowerCase();
             String s2 = getSortableValue(v2, category).toLowerCase();
 
-            // 1. Handle Time
+            //handles time identifier
             if (category.equals("Entry Time")) {
                 return v1.getEntryTime().compareTo(v2.getEntryTime());
             }
 
-            // 2. Handle Numerical Sort for CELLS
+            //handle numerical sort for cells category
             if (category.equals("Cells")) {
-                // Extract numbers from strings like "[F0][R1][C6]"
-                // Replace non-digits with spaces, trim, and split
+                //extract numbers from strings like "[F0][R1][C6]"
+                //replace non-digits with spaces, trim, and split
                 String[] nums1 = s1.replaceAll("[^0-9]+", " ").trim().split(" ");
                 String[] nums2 = s2.replaceAll("[^0-9]+", " ").trim().split(" ");
 
@@ -447,7 +438,7 @@ public class VehicleFinderPanel extends VBox {
                 return Integer.compare(nums1.length, nums2.length);
             }
 
-            // 3. Standard Positional Relevance Sort (for Model, Plate, Ticket#)
+            //standard positional relevance Sort (for model, plate, ticket#)
             int idx1 = s1.indexOf(lowerQuery);
             int idx2 = s2.indexOf(lowerQuery);
             if (idx1 != idx2) return Integer.compare(idx1, idx2);
@@ -455,7 +446,7 @@ public class VehicleFinderPanel extends VBox {
             return s1.compareTo(s2);
         });
 
-        // 3. Build UI
+        //build UI
         List<javafx.scene.Node> newResults = new java.util.ArrayList<>();
         if (matches.isEmpty()) {
             Label noResults = new Label("No vehicles found: '" + query + "'");
@@ -471,19 +462,18 @@ public class VehicleFinderPanel extends VBox {
     }
 
 
-    // Helper to build the visual row matching your sketch
+    //helper to build the visual row for other categories except cell
     private HBox buildResultRow(Vehicle car, String category) {
         HBox row = new HBox(10);
         row.setAlignment(Pos.CENTER_LEFT);
         row.setPadding(new Insets(5));
         row.setStyle("-fx-background-color: #222222; -fx-background-radius: 3; -fx-border-color: #333333; -fx-border-radius: 3; -fx-cursor: hand;");
 
-        // 1. The colored dot
+        //colored dot
         Circle floorDot = new Circle(4);
         floorDot.setFill(car.getDot().getFill());
         row.getChildren().add(floorDot);
 
-        // 2. Display Logic (Text)
         String displayText;
         switch (category) {
             case "Ticket#": displayText = "#" + car.getTicketNumber(); break;
@@ -499,20 +489,19 @@ public class VehicleFinderPanel extends VBox {
         infoLabel.setStyle("-fx-text-fill: white;");
         row.getChildren().add(infoLabel);
 
-        // 3. THE SPACER (This pushes everything that follows to the far right)
+        //this pushes everything that follows to the far right
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         row.getChildren().add(spacer);
 
-        // 4. The Live Status Emoji Box (Now on the right)
-        if (!"Cell".equals(category)) { // Ensure this string matches your box item
+        //the live status emoji Box
+        if (!"Cell".equals(category)) {
             Label statusBox = new Label("🚘");
             statusBox.setAlignment(Pos.CENTER);
 
             String baseStyle = "-fx-text-fill: white; -fx-font-size: 12px; -fx-padding: 2 6 2 6; -fx-background-radius: 4; ";
 
-            // Note: Since you are using the MasterList approach, you can
-            // access the status directly from the vehicle object
+            //determines the vehicle status dependent on the status filter button chosen
             if (car.getCurrentStatus() == Vehicle.Status.TRANSITING) {
                 statusBox.setStyle(baseStyle + "-fx-background-color: #28a745;"); // Green
             } else if (car.getCurrentStatus() == Vehicle.Status.PARKED) {
@@ -523,18 +512,18 @@ public class VehicleFinderPanel extends VBox {
             row.getChildren().add(statusBox);
         }
 
-        // 5. Hover effects
+        //hover effects
         row.setOnMouseEntered(e -> row.setStyle("-fx-background-color: #333333; -fx-background-radius: 3; -fx-border-color: #39FF14; -fx-border-radius: 3; -fx-cursor: hand;"));
         row.setOnMouseExited(e -> row.setStyle("-fx-background-color: #222222; -fx-background-radius: 3; -fx-border-color: #333333; -fx-border-radius: 3; -fx-cursor: hand;"));
 
         return row;
     }
 
-    // Updates the reference to the parking lot after a simulation reboot
+    //updates the reference to the parking lot after a simulation reboot
     public void updateParkingLot(ParkingLot newLot) {
         this.currentLot = newLot;
 
-        // Wipe the old search data clean
+        //wipe the old search data clean
         lastSearchedCategory = "";
         lastSearchedQuery = "";
         resultsArea.getChildren().clear();
@@ -551,7 +540,7 @@ public class VehicleFinderPanel extends VBox {
         String currentCat = categoryBox.getValue();
         String currentText = searchInput.getText().trim();
 
-        // 1. If no category is selected, disable the button and hide results
+        //if no category is selected, disable the button and hide results
         if (currentCat == null) {
             searchButton.setDisable(true);
             searchButton.setText("SEARCH");
@@ -561,28 +550,28 @@ public class VehicleFinderPanel extends VBox {
             return;
         }
 
-        // 2. Determine if the user is about to perform a NEW search
+        //determines if the user is about to perform a new search
         boolean isNewSearch = !currentCat.equals(lastSearchedCategory) ||
                 !currentText.equalsIgnoreCase(lastSearchedQuery);
 
-        // 3. If it's a new search, enable the button so they can click it
+        //if it's a new search, enable the button so they can click it
         searchButton.setDisable(!isNewSearch);
 
-        // 4. --- MASTER VISIBILITY LINK ---
+        //MASTER VISIBILITY LINK
         if (!isNewSearch && lastSearchedCategory != null && !lastSearchedCategory.isEmpty()) {
-            // If inputs perfectly match the active live search, automatically show the results area!
+            //if inputs perfectly match the active live search, automatically show the results area
             scrollPane.setVisible(true);
             scrollPane.setManaged(true);
             executeSearch(lastSearchedCategory, lastSearchedQuery);
         } else {
-            // If they are mid-typing or looking at an unsearched category, hide the old results
-            // so they don't look at inaccurate or misleading data.
+            //if they are mid-typing or looking at an unsearched category, hide the old results
+            //so they don't look at inaccurate or misleading data.
             scrollPane.setVisible(false);
             scrollPane.setManaged(false);
             resultsArea.getChildren().clear();
         }
 
-        // 5. Conditional Styling for the button
+        //conditional Styling for the confirm button
         if (currentText.isEmpty()) {
             searchButton.setText("VIEW ALL");
             searchButton.setStyle("-fx-background-color: #FF00FF; -fx-text-fill: black; -fx-cursor: hand; -fx-font-family: 'Segoe UI'; -fx-font-size: 11px; -fx-font-weight: bold;");
@@ -592,13 +581,13 @@ public class VehicleFinderPanel extends VBox {
         }
     }
 
-    private String getSortableValue(Vehicle car, String category) { //determines search ranking
+    private String getSortableValue(Vehicle car, String category) { //fetch proper data depending on category
         switch (category) {
             case "Ticket#": return String.valueOf(car.getTicketNumber());
             case "Plate": return car.getPlate();
             case "Model": return car.getModel().toString();
             case "Type": return car.getType().toString();
-            case "Entry Time": return car.getEntryTime().toString(); // Sorts naturally
+            case "Entry Time": return car.getEntryTime().toString(); //sorts naturally
             case "Cell": return currentLot.getVehicleCoordinates(car);
             default: return "";
         }
