@@ -338,6 +338,10 @@ public class GridlottUI extends Application {
             LocalTime realCurrentTime = LocalTime.now().truncatedTo(ChronoUnit.SECONDS);
             Vehicle v = new Vehicle();
 
+            if(!currentLot.isFull){
+                currentLot.totalCars.set(currentLot.totalCars.get()+1); //updates total cars for ParkingLot as a car comes in
+            }
+
             double actualCurrentDelay = flow.getDuration().toSeconds();
             v.setSpawnTime(actualCurrentDelay);
 

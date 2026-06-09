@@ -27,6 +27,7 @@ public class Vehicle {
     private int ticketNumber;
     private javafx.animation.ScaleTransition exitPulseAnimation;
     private Status currentStatus = Status.TRANSITING;
+    private String cellCoords;
 
     //INNER CLASSES=====================================================================================================
     enum Model {
@@ -122,6 +123,7 @@ public class Vehicle {
     public int getTicketNumber(){ return ticketNumber; }
     public double getSpawnTime(){ return spawnTime; }
     public Status getCurrentStatus() { return currentStatus; }
+
     //==================================================================================================================
 
     //SETTERS===========================================================================================================
@@ -133,6 +135,7 @@ public class Vehicle {
     public void setTicketNumber(int num){ticketNumber = num;}
     public void setSpawnTime(double t){spawnTime = t;}
     public void setCurrentStatus(Status currentStatus) {this.currentStatus = currentStatus;}
+    public void setCellCoords(String coords) {this.cellCoords = coords;}
 
     //==================================================================================================================
     /*
@@ -154,11 +157,13 @@ public class Vehicle {
             this.dot.setStrokeWidth(1.5);
         }
 
+        String displayCoords = (cellCoords != null) ? cellCoords : "Routing...";
         String info =
                 "Ticket: #" + ticketNumber +
                         "\nPlate: " + plate +
                         "\nType: " + type.toString() +
                         "\nModel: " + model.toString() +
+                        "\nCell Coords: " + displayCoords +
                         "\nEntry time: " + entryTime.toString();
 
         this.dot.setPickOnBounds(false);
@@ -201,6 +206,25 @@ public class Vehicle {
 
         Tooltip.install(this.dot, vehicleTooltip);
         this.dot.getProperties().put("tooltip", vehicleTooltip);
+    }
+
+    // Add this method to dynamically update the tooltip text
+    public void updateCellCoords(int floor, int row, int col) {
+        // Format to 1-based indexing for the UI display
+        this.cellCoords = String.format("[%d,%d,%d]", floor + 1, row + 1, col + 1);
+
+        // Fetch the existing tooltip and update its text
+        if (this.dot != null && this.dot.getProperties().containsKey("tooltip")) {
+            Tooltip vehicleTooltip = (Tooltip) this.dot.getProperties().get("tooltip");
+            String info =
+                    "Ticket: #" + ticketNumber +
+                            "\nPlate: " + plate +
+                            "\nType: " + type.toString() +
+                            "\nModel: " + model.toString() +
+                            "\nCell Coords: " + cellCoords +
+                            "\nEntry time: " + entryTime.toString();
+            vehicleTooltip.setText(info);
+        }
     }
 
     //VISUAL EFFECT COMPONENTS==========================================================================================
